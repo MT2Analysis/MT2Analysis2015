@@ -110,6 +110,7 @@ int main( int argc, char* argv[] ) {
 
 
   std::string gammaCRdir = cfg.getGammaCRdir();
+  std::string workingDir = cfg.getGammaCRdir() + "/isolationAndPurity/";
   MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( gammaCRdir + "/data.root", "gammaCR_loose" );
   
  
@@ -130,22 +131,21 @@ int main( int argc, char* argv[] ) {
   if(doAxes){
    
     /*
-      MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_ht = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( gammaCRdir + "/iso_ht.root", "iso_ht" );
-      MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_njets = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( gammaCRdir + "/iso_nJets.root", "iso_njets" );
-      MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_nbjets = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( gammaCRdir + "/iso_nBJets.root", "iso_nbjets" );
-      MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_mono_nbjets = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( gammaCRdir + "/iso_mono_nBJets.root", "iso_mono_nbjets" );
+      MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_ht = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( workingDir + "/iso_ht.root", "iso_ht" );
+      MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_njets = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( workingDir + "/iso_nJets.root", "iso_njets" );
+      MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_nbjets = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( workingDir + "/iso_nBJets.root", "iso_nbjets" );
+      MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_mono_nbjets = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( workingDir + "/iso_mono_nBJets.root", "iso_mono_nbjets" );
     */
-    MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_central = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( gammaCRdir + "/iso_central.root", "iso_central" );
-    MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_mono_ht = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( gammaCRdir + "/iso_mono_ht.root", "iso_mono_ht" );
+    MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_central = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( workingDir + "/iso_central.root", "iso_central" );
+    MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_mono_ht = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( workingDir + "/iso_mono_ht.root", "iso_mono_ht" );
 
-    MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_incl_ht = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( gammaCRdir + "/iso_incl_ht.root", "iso_incl_ht" );
-    MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_incl_njets = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( gammaCRdir + "/iso_incl_nJets.root", "iso_incl_njets" );
-    MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_incl_nbjets = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( gammaCRdir + "/iso_incl_nBJets.root", "iso_incl_nbjets" );
+    MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_incl_ht = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( workingDir + "/iso_incl_ht.root", "iso_incl_ht" );
+    MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_incl_njets = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( workingDir + "/iso_incl_nJets.root", "iso_incl_njets" );
+    MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_incl_nbjets = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( workingDir + "/iso_incl_nBJets.root", "iso_incl_nbjets" );
   
-    MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_mt2 = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( gammaCRdir + "/iso_mt2.root", "iso_mt2" );
+    MT2Analysis<MT2EstimateZinvGamma>* gammaJet_data_mt2 = MT2Analysis<MT2EstimateZinvGamma>::readFromFile( workingDir + "/iso_mt2.root", "iso_mt2" );
 
     makePurity( cfg, outputdir,  gammaJet_data_mt2, templates_prompt, templates_fake, useMC, "mt2_");
-
 
    
     /*

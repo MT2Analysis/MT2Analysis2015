@@ -209,36 +209,20 @@ void MT2EstimateTree::projectFromTree( const MT2EstimateTree* treeEst, const std
 
 
 
-/*
-MT2Analysis<MT2EstimateTree>* MT2EstimateTree::makeRebinnedAnalysisFromInclusiveTree( const std::string& aname, const std::string& regionsSet, MT2Analysis<MT2EstimateTree>* estimate, int nBins, float xMin, float xMax, const std::string& selection, const std::string& variable ) {
 
-  std::set<MT2Region> regions = estimate->getRegions();
+MT2Analysis<MT2EstimateTree>* MT2EstimateTree::makeRebinnedAnalysisFromInclusiveTree( const std::string& aname, const std::string& regionsSet, MT2Analysis<MT2EstimateTree>* estimate, const std::string& selection, int nBins, float xMin, float xMax, const std::string& variable ) {
 
-  if( regions.size()!=1 ) {
-    std::cout << "[MT2EstimateTree::makeAnalysisFromEstimateTreeInclusive] ERROR!! You need to pass an inclusive MT2EstimateTree Analysis to use this function!" << std::endl;
-    exit(19191);
-  }
-  
-  MT2EstimateTree* treeInclusive = estimate->get( *(regions.begin()) );
+  double bins[nBins+1];
+  double step = (xMax-xMin)/(double)nBins;
 
-  // will create a new analysis with custom regions from inclusive tree:
-  MT2Analysis<MT2EstimateTree>* analysis = new MT2Analysis<MT2EstimateTree>( aname, regionsSet );
-  std::set<MT2Region> newRegions = analysis->getRegions();
-  
-  if ( nBins > 0 )
-    MT2Estimate::rebinYields( (MT2Analysis<MT2Estimate>*) analysis, nBins, bins );
-  
-  for( std::set<MT2Region>::iterator iR=newRegions.begin(); iR!=newRegions.end(); ++iR ) {
-   
-    MT2EstimateTree* thisEstimateTree = analysis->get( *iR );
-    thisEstimateTree->projectFromTree( treeInclusive, selection, variable );
+  for(int i=0; i <= nBins; i++)
+    bins[i] = xMin + ((double)i )* step;
 
-  } // for regions
+  MT2Analysis<MT2EstimateTree>* analysis =  MT2EstimateTree::makeRebinnedAnalysisFromInclusiveTree( aname, regionsSet, estimate,  selection,  nBins, bins, variable );
 
   return analysis;
-
 }
-*/
+
 
 
 MT2Analysis<MT2EstimateTree>* MT2EstimateTree::makeRebinnedAnalysisFromInclusiveTree( const std::string& aname, const std::string& regionsSet, MT2Analysis<MT2EstimateTree>* estimate, const std::string& selection, int nBins, double* bins, const std::string& variable ) {

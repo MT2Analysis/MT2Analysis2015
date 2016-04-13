@@ -7,20 +7,16 @@ inputFolder="/pnfs/psi.ch/cms/trivcat/store/user/mschoene/MT2production/74X/Spri
 # --------------------------
 
 # initialization
-outputFolder="/scratch/`whoami`/lepSF/"
-objectName="lep"
-
+outputFolder="/scratch/`whoami`/allSF/"
+objectName=""
 
 args=("$@")
 if [ ${#args[@]}>0 ]; then
     inputFolder=$1
 fi
 
-echo $inputFolder
-
-
 # here I compile the root macro only once
-echo "gROOT->LoadMacro(\"lepSF.C+\"); gSystem->Exit(0);" |root.exe -b -l ;
+echo "gROOT->LoadMacro(\"allSF.C+\"); gSystem->Exit(0);" |root.exe -b -l ;
 
 while read line; 
 do 
@@ -32,9 +28,9 @@ do
 
     mkdir -p $outputFolder
     
-    echo "lepSF(\"$name\",\"$inputFolder\",\"$outputFile\",\"$treeName\",\"$objectName\")"
-    echo "gROOT->LoadMacro(\"lepSF.C\"); lepSF(\"$name\",\"$inputFolder\",\"$outputFile\",\"$treeName\",\"$objectName\"); gSystem->Exit(0);" |root.exe -b -l ;
+    echo "allSF(\"$name\",\"$inputFolder\",\"$outputFile\",\"$treeName\",\"$objectName\")"
+    echo "gROOT->LoadMacro(\"allSF.C+\"); allSF(\"$name\",\"$inputFolder\",\"$outputFile\",\"$treeName\",\"$objectName\"); gSystem->Exit(0);" |root.exe -b -l ;
     
 done < postProcessing.cfg
 
-rm -f lepSF_C.d lepSF_C.so lepSF_C_ACLiC_dict_rdict.pcm;
+rm -f allSF_C.d allSF_C.so allSF_C_ACLiC_dict_rdict.pcm;

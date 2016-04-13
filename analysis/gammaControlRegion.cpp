@@ -88,8 +88,8 @@ int main( int argc, char* argv[] ) {
 
     std::string samplesFile = "../samples/samples_" + cfg.mcSamples() + ".dat";
     
-    std::vector<MT2Sample> samples_gammaJet = MT2Sample::loadSamples(samplesFile, "gjet");
-    //   std::vector<MT2Sample> samples_gammaJet = MT2Sample::loadSamples(samplesFile, "GJets");
+    std::vector<MT2Sample> samples_gammaJet = MT2Sample::loadSamples(samplesFile, "GJets",200,299); 
+
     if( samples_gammaJet.size()==0 ) {
       std::cout << "There must be an error: didn't find any gamma+jet files in " << samplesFile << "!" << std::endl;
       exit(1209);
@@ -433,7 +433,7 @@ void computeYield( const MT2Sample& sample, const MT2Config& cfg,
 
     if( myTree.isData ) {
       
-      //      if( !( myTree.isGolden ) ) continue;
+      if( !( myTree.isGolden ) ) continue;
       
       if( !( myTree.HLT_Photon165_HE10 ) ) continue;
 
@@ -466,7 +466,6 @@ void computeYield( const MT2Sample& sample, const MT2Config& cfg,
 
     //    Double_t weight = (myTree.isData) ? 1. : myTree.evt_scale1fb*cfg.lumi()*myTree.puWeight; 
     Double_t weight = (myTree.isData) ? 1. : myTree.evt_scale1fb;//*cfg.lumi(); 
-    //  Double_t weight = (myTree.isData) ? 1. : myTree.evt_scale1fb*cfg.lumi(); 
 
     if( !myTree.isData )
       weight *= myTree.weight_btagsf;

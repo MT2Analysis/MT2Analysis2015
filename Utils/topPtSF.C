@@ -1,8 +1,8 @@
 /*
 How to run:
 root -l
-.L isrSF.C+
-isrSF(inputString, inputFolder, outputFile, treeName, objectName)
+.L topPtSF.C+
+topPtSF(inputString, inputFolder, outputFile, treeName, objectName)
 */
 
 #include <sstream>
@@ -29,7 +29,7 @@ isrSF(inputString, inputFolder, outputFile, treeName, objectName)
 using namespace std;
 
 
-int isrSF(string inputString,
+int topPtSF(string inputString,
 	  string inputFolder,
 	  string outputFile,
 	  string treeName,
@@ -45,31 +45,21 @@ int isrSF(string inputString,
   TFile *out = new TFile(outputFile.c_str(), "RECREATE");
   TTree *clone = new TTree("mt2", "post processed baby tree for mt2 analysis");
 
-  clone = tree_->CloneTree(-1, "fast"); 
+  clone = tree_->CloneTree(-1, "mt2"); 
   clone->SetName("mt2");
 
-//  Float_t weight_lepsf;
-//  Float_t weight_lepsf_UP;
-//  Float_t weight_lepsf_DN;
-//  Float_t weight_btagsf;
-//  Float_t weight_btagsf_UP;
-//  Float_t weight_btagsf_DN;
-//  Float_t weight_sigtrigsf;
-//  Float_t weight_dileptrigsf;
-//  Float_t weight_phottrigsf;
-//  Float_t weight_pu;
-//  Float_t weight_isr;
-//  Float_t weight_scales_UP;
-//  Float_t weight_scales_DN;
-//  Float_t weight_pdfs_UP;
-//  Float_t weight_pdfs_DN;
+  //Values from Run1 still valid for now, see here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/TopPtReweighting
+  float a = 0.156;
+  float b = -0.00137;
 
-  Float_t weight_isr;
+
+  Float_t weight_topPt;
+  Float_t weight_topPt_uncert;
 
   int isData; 
   clone->SetBranchAddress("isData",&isData);
   //  clone->GetEntry(0); 
-  
+ 
   Int_t nobj;
   clone->SetBranchAddress(("n"+objectName).c_str(), &nobj);
   
@@ -83,11 +73,52 @@ int isrSF(string inputString,
   clone->SetBranchAddress((objectName+"_mass").c_str(), obj_mass);
   Int_t obj_status[100];
   clone->SetBranchAddress((objectName+"_status").c_str(), obj_status);
+  Int_t obj_pdgId[100];
+  clone->SetBranchAddress((objectName+"_pdgId").c_str(), obj_pdgId);
 
-  TBranch* b1 = clone->Branch("weight_isr", &weight_isr, "weight_isr/F");
 
+  TBranch* b1 = clone->Branch("weight_topPt", &weight_topPt, "weight_topPt/F");
+  TBranch* b2 = clone->Branch("weight_topPt_uncert", &weight_topPt_uncert, "weight_topPt_uncert/F");
+    
   int nEntries = clone->GetEntries();
   std::cout << "Starting loop over " << nEntries << " entries..." << std::endl;
+
+  //top pt scale factors should not change the overall normalization
+  //first loop get the average of the scale factors
+  double average = 0;
+
+  for(int i = 0; i < nEntries; ++i) {
+    
+    if(i%50000 == 0)
+      std::cout << "Entry "<< i << "/" << nEntries << std::endl;
+    
+    clone->GetEntry(i);
+    weight_topPt = 1.;
+
+    if( objectName != "GenPart" || isData == 1 ) ;
+    else{
+      if(nobj>0)
+	for(int o=0; o<nobj; ++o){
+   
+	  if(obj_status[o] != 62) continue;
+    
+	  //Only apply weight to top or antitop
+	  if( abs(obj_pdgId[o])==6 )
+	    weight_topPt *= exp( a + b* obj_pt[o] );
+	  else continue;
+
+	}//end loop over objects
+    }
+    
+    average += weight_topPt;   
+ 
+  }
+  //-------------------------------------------------------------end of run over events
+
+  average /=  double(nEntries);
+  std::cout << "average = " << average << std::endl;
+
+  double average_test = 0;
 
   for(int i = 0; i < nEntries; ++i) {
     
@@ -96,36 +127,31 @@ int isrSF(string inputString,
     
     clone->GetEntry(i);
     
-    weight_isr=1.;
-    
+    weight_topPt = 1.;
+    weight_topPt_uncert = 0;
+
     if( objectName != "GenPart" || isData == 1 ) ;
     else{
-      
-      TLorentzVector s;
-      
       if(nobj>0)
 	for(int o=0; o<nobj; ++o){
-	  
+       
 	  if(obj_status[o] != 62) continue;
-	  
-	  TLorentzVector s_;
-	  s_.SetPtEtaPhiM(obj_pt[o], obj_eta[o], obj_phi[o], obj_mass[o]);
-	  s+=s_;
-	  
-	}
-      
-      float pt_hard = s.Pt();
-      if( pt_hard < 0. )         continue;
-      else if( pt_hard < 400. )  weight_isr = 1.0;
-      else if( pt_hard < 600. )  weight_isr = 1.15;
-      else if( pt_hard >= 600. ) weight_isr = 1.30;
+
+	  //Only apply weight to top or antitop
+	  if( abs(obj_pdgId[o])==6 )
+	    weight_topPt *= exp( a + b * obj_pt[o] );
+	  else continue;
+
+	}//end loop over objects
+    
+      weight_topPt /= average;
 
     }
+
+    b1->Fill();  
     
-    b1->Fill();
-  
   }
-  //-------------------------------------------------------------
+  //-------------------------------------------------------------end of run over events
 
 
   clone->Write();

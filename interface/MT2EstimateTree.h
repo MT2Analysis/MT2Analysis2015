@@ -98,7 +98,17 @@ class MT2EstimateTree : public MT2Estimate {
 
   static MT2Analysis<MT2EstimateTree>* makeAnalysisFromInclusiveTree( const std::string& aname, const std::string& regionsSet, MT2Analysis<MT2EstimateTree>* analysis, const std::string& selection="" ) { return makeRebinnedAnalysisFromInclusiveTree( aname, regionsSet, analysis, selection ); };
 
+
+
+
+
   static MT2Analysis<MT2EstimateTree>* makeRebinnedAnalysisFromInclusiveTree( const std::string& aname, const std::string& regionsSet, MT2Analysis<MT2EstimateTree>* analysis, const std::string& selection="", int nBins=0, double* bins=0,  const std::string& variable="mt2" );
+
+  static MT2Analysis<MT2EstimateTree>* makeRebinnedAnalysisFromInclusiveTree( const std::string& aname, const std::string& regionsSet, MT2Analysis<MT2EstimateTree>* estimate, const std::string& selection, int nBins, float xMin, float xMax, const std::string& variable="mt2" );
+
+
+
+
 
   virtual void getShit( TFile* file, const std::string& path );
 
