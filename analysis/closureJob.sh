@@ -2,7 +2,7 @@
 
 echo $#;
 if [ $# -le 4 ]; then
-    echo "USAGE: ${0} cfg mc sampleID ijob Njobs ";
+    echo "USAGE: ${0} cfg mc sampleID ijob Njobs";
     exit;
 fi
 
@@ -13,12 +13,11 @@ MC=$2
 SID=$3
 JOB=$4
 NJOB=$5
-TOSE=$6
-LBL=$7
+LBL=$6
 
 source $VO_CMS_SW_DIR/cmsset_default.sh
 cd $WDIR
 eval `scramv1 runtime -sh`
 #cmsenv
 
-./doRebalancing $CFG $MC $SID $JOB $NJOB $TOSE $LBL
+./closureRS $CFG $MC $SID $JOB $NJOB $LBL

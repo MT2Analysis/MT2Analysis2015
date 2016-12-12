@@ -2,15 +2,14 @@ import os, subprocess
 
 cfg="mc_QCD4RS"
 mc="mc"
-sampleIDs = range(150,158,1)
-#sampleIDs = range(154,158,1)
-#sampleIDs = [150]
+sampleIDs = range(154,158,1)
+#sampleIDs = [154]
 Njobs = 30
-toSE = "true"
 label = "genjets"
 
+#queue = "long.q"
 queue = "all.q"
-jobsDir = "rebalanceJobsMay04_%s/" % label
+jobsDir = "closureJobsMay12_pandolfiGen_%s/" % (label) 
 os.system("mkdir "+jobsDir)
 
 wdir=os.environ["PWD"]
@@ -23,6 +22,6 @@ if hoursleft < 5:
 
 for sID in sampleIDs:
     for job in range(Njobs):
-        command = "qsub -q {q} -o {wdir}/{jDir}/job_id{sid}_{j}of{N}.out -e {wdir}/{jDir}/job_id{sid}_{j}of{N}.err rebalanceJob.sh {cfg} {mc} {sid} {j} {N} {toSE} {lbl}".format(q=queue, wdir=wdir, jDir=jobsDir, sid=sID, j=job, N=Njobs, cfg=cfg, mc=mc, toSE=toSE, lbl=label)
+        command = "qsub -q {q} -o {wdir}/{jDir}/job_id{sid}_{j}of{N}.out -e {wdir}/{jDir}/job_id{sid}_{j}of{N}.err closureJob.sh {cfg} {mc} {sid} {j} {N} {lbl}".format(q=queue, wdir=wdir, jDir=jobsDir, sid=sID, j=job, N=Njobs, cfg=cfg, mc=mc, lbl=label)
         #print command
         os.system(command)

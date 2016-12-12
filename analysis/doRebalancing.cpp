@@ -32,12 +32,14 @@ Double_t jEtaPU[NJ];
 Int_t jPtIndex[NJ], jEtaIndex[NJ];
 Double_t softPxReco, softPyReco;
 
+bool onlyGausCore = true; // rebalance using only gauss of response templates, otherwise doubleCB
+
 
 // open file with response functions
 double PtBinEdges[23] = {0, 20, 30, 50, 80, 120, 170, 230, 300, 380, 470, 570, 680, 800, 1000, 1300, 1700, 2200, 2800, 3500, 4300, 5200, 6500};
 double EtaBinEdges[12] = {0, 0.3, 0.5, 0.8, 1.1, 1.4, 1.7, 2.3, 2.8, 3.2, 4.1, 5.0};
 RooWorkspace *w[22][12];
-TFile *fTemplates = new TFile("/shome/casal/templatesRandS/responseTemplates.root");
+TFile *fTemplates = new TFile("/mnt/t3nfs01/data01/shome/casal/templatesRandS/responseTemplates.root");
 
 void rebalance( const MT2Sample& sample, MT2Analysis<MT2EstimateTree>* anaTree );
 void getTemplates();
@@ -61,7 +63,7 @@ int main( int argc, char* argv[] ) {
   std::cout << std::endl << std::endl;
 
   if( argc<2 ) {
-    std::cout << "USAGE: ./doRebalancing configFileName [data/MC/all] [sampleID] [job_i] [Njobs]" << std::endl;
+    std::cout << "USAGE: ./doRebalancing configFileName [data/MC/all] [sampleID] [job_i] [Njobs] [toSE] [label]" << std::endl;
     std::cout << "Exiting." << std::endl;
     exit(11);
   }
@@ -73,6 +75,8 @@ int main( int argc, char* argv[] ) {
 
   bool onlyData = false;
   bool onlyMC   = false;
+  bool toSE  = false;
+  std::string label = "analysisRS";
   if( argc > 2 ) {
     std::string dataMC(argv[2]);
     if( dataMC=="data" ) onlyData = true;
@@ -99,11 +103,27 @@ int main( int argc, char* argv[] ) {
     std::cout << "-> Will run job " << ijob << " out of " << Njobs << std::endl;
   }
 
+  if( argc > 6 ) {
+    std::string batch(argv[6]);
+    if( batch=="true" || batch=="True" ) toSE = true;
+  }
 
+  if( argc > 7 ) {
+    std::string tmp(argv[7]);
+    label += "_"+tmp;
+  }
+
+  if(toSE) std::cout << "-> Output will be writen in SE" << std::endl;
+
+  std::string user (getenv("USER"));
 
   TH1::AddDirectory(kFALSE); // stupid ROOT memory allocation needs this
 
-  std::string outputdir = cfg.getEventYieldDir() + "/rebalancedTrees"; 
+  TString rebTreeOutput = "rebalancedTrees";
+  rebTreeOutput += onlyGausCore ? "_gaus/" : "_dCB/";
+
+  std::string outputdir =  toSE ? "/scratch/" + user + "/" : "";
+  outputdir += cfg.getEventYieldDir() + "/" + rebTreeOutput.Data();
   system(Form("mkdir -p %s", outputdir.c_str()));
 
 
@@ -121,7 +141,7 @@ int main( int argc, char* argv[] ) {
     else 
       samples_qcd = MT2Sample::loadSamples(samplesFile, sampleID, sampleID);
 
-    MT2Analysis<MT2EstimateTree>* qcdCRtree = new MT2Analysis<MT2EstimateTree>( "qcdRebalancedTree", "13TeV_inclusive" );
+    MT2Analysis<MT2EstimateTree>* qcdCRtree = new MT2Analysis<MT2EstimateTree>( "qcdRebalancedTree", "13TeV_noCut" );
     MT2EstimateTree::addVar( qcdCRtree, "jet1_pt" );
     MT2EstimateTree::addVar( qcdCRtree, "jet2_pt" );
     MT2EstimateTree::addVar( qcdCRtree, "metphi"  );
@@ -137,26 +157,48 @@ int main( int argc, char* argv[] ) {
     MT2EstimateTree::addVar( qcdCRtree, "reb_jasons_met_phi" );
     MT2EstimateTree::addVar( qcdCRtree, "reb_brunos_met_pt"  );
     MT2EstimateTree::addVar( qcdCRtree, "reb_brunos_met_phi" );
-    MT2EstimateTree::addVector( qcdCRtree, "before_jet_pt"  );
-    MT2EstimateTree::addVector( qcdCRtree, "reb_jet_pt"  );
-    MT2EstimateTree::addVector( qcdCRtree, "jet_eta" );
-    MT2EstimateTree::addVector( qcdCRtree, "jet_phi" );
-    MT2EstimateTree::addVector( qcdCRtree, "jet_mass" );
-    MT2EstimateTree::addVector( qcdCRtree, "jet_puId" );
-    MT2EstimateTree::addVector( qcdCRtree, "jet_id" );
-    MT2EstimateTree::addVector( qcdCRtree, "jet_btagCSV" );
+    MT2EstimateTree::addVector( qcdCRtree, "gen_jet_pt"   );
+    MT2EstimateTree::addVector( qcdCRtree, "gen_jet_eta"  );
+    MT2EstimateTree::addVector( qcdCRtree, "gen_jet_phi"  );
+    MT2EstimateTree::addVector( qcdCRtree, "gen_jet_mass" );
+    MT2EstimateTree::addVector( qcdCRtree, "mc_jet_pt"    );
+    MT2EstimateTree::addVector( qcdCRtree, "before_jet_pt");
+    MT2EstimateTree::addVector( qcdCRtree, "reb_jet_pt"   );
+    MT2EstimateTree::addVector( qcdCRtree, "jet_eta"      );
+    MT2EstimateTree::addVector( qcdCRtree, "jet_phi"      );
+    MT2EstimateTree::addVector( qcdCRtree, "jet_mass"     );
+    MT2EstimateTree::addVector( qcdCRtree, "jet_puId"     );
+    MT2EstimateTree::addVector( qcdCRtree, "jet_id"       );
+    MT2EstimateTree::addVector( qcdCRtree, "jet_btagCSV"  );
     
+    TString mcFile = "mc";
+    if (sampleID!=-1)
+      mcFile += TString::Format("_id%d_job%dof%d", sampleID, ijob, Njobs);
+    mcFile += ".root";
+    TFile *ofile = new TFile((outputdir + mcFile.Data()).c_str(),"RECREATE");
+    qcdCRtree->setFile(ofile);
+
     
     for( unsigned i=0; i<samples_qcd.size(); ++i ) 
       rebalance( samples_qcd[i], qcdCRtree );
     
+    qcdCRtree->write();
+    ofile->Close();
 
-   
-    TString mcFile = outputdir + "/mc";
-    if (sampleID!=-1)
-      mcFile += TString::Format("_id%d_job%dof%d", sampleID, ijob, Njobs);
-    mcFile += ".root";
-    qcdCRtree->writeToFile( mcFile.Data(), "RECREATE" );
+    // TString mcFile = outputdir + "/mc";
+    // if (sampleID!=-1)
+    //   mcFile += TString::Format("_id%d_job%dof%d", sampleID, ijob, Njobs);
+    // mcFile += ".root";
+    // qcdCRtree->writeToFile( mcFile.Data(), "RECREATE" );
+
+    if (toSE) {
+      std::string inputdir = outputdir;
+      outputdir =  "/pnfs/psi.ch/cms/trivcat/store/user/" + user + "/" + label + "/" + cfg.getEventYieldDir() + "/" + rebTreeOutput.Data(); 
+      system(Form("gfal-mkdir -p srm://t3se01.psi.ch%s", outputdir.c_str()));
+      system(Form("gfal-copy -p file://%s%s srm://t3se01.psi.ch%s%s", inputdir.c_str(), mcFile.Data(), outputdir.c_str(), mcFile.Data()));
+      std::cout << "output file copied to " << Form("srm://t3se01.psi.ch%s%s", outputdir.c_str(), mcFile.Data()) << std::endl;
+      system(Form("rm %s%s", inputdir.c_str(), mcFile.Data()));
+    }
 
   }
 
@@ -166,8 +208,6 @@ int main( int argc, char* argv[] ) {
     //to be implemented
 
   }
-
-
 
   return 0;
 
@@ -209,6 +249,12 @@ void rebalance( const MT2Sample& sample, MT2Analysis<MT2EstimateTree>* anaTree )
       if ( !myTree.passFilters() ) continue;
     }
     
+    if( myTree.nVert==0 )
+      continue;
+
+    // remove leptons
+    if( (myTree.nElectrons10 + myTree.nMuons10 + myTree.nPFLep5LowMT + myTree.nPFHad10LowMT)>0 )
+      continue;
 
     float minMTBmet = myTree.minMTBMet;
     float met_pt    = myTree.met_pt;
@@ -227,6 +273,11 @@ void rebalance( const MT2Sample& sample, MT2Analysis<MT2EstimateTree>* anaTree )
     if( thisTree==0 ) continue;
 
 
+    std::vector<float> gen_jet_pt     ;
+    std::vector<float> gen_jet_eta    ;
+    std::vector<float> gen_jet_phi    ;
+    std::vector<float> gen_jet_mass   ;
+    std::vector<float> mc_jet_pt      ;
     std::vector<float> all_jet_pt     ;
     std::vector<float> all_jet_eta    ;
     std::vector<float> all_jet_phi    ;
@@ -235,10 +286,19 @@ void rebalance( const MT2Sample& sample, MT2Analysis<MT2EstimateTree>* anaTree )
     std::vector<float> all_jet_id     ;
     std::vector<float> all_jet_btagCSV;
     std::vector<float> reb_jet_pt     ;
+
+
+    for (int j=0; j< myTree.ngenJet; j++) {
+      gen_jet_pt  .push_back(myTree.genJet_pt  [j]);
+      gen_jet_eta .push_back(myTree.genJet_eta [j]);
+      gen_jet_phi .push_back(myTree.genJet_phi [j]);
+      gen_jet_mass.push_back(myTree.genJet_mass[j]);
+    }
     
     Nj=0;
     NPUj=0;
     for (int j=0; j< myTree.njet; j++) {
+      mc_jet_pt      .push_back(myTree.jet_mcPt   [j]);
       all_jet_pt     .push_back(myTree.jet_pt     [j]);
       all_jet_eta    .push_back(myTree.jet_eta    [j]);
       all_jet_phi    .push_back(myTree.jet_phi    [j]);      
@@ -416,13 +476,18 @@ void rebalance( const MT2Sample& sample, MT2Analysis<MT2EstimateTree>* anaTree )
     thisTree->assignVar( "reb_jasons_met_phi", metphi_re2     );
     thisTree->assignVar( "reb_brunos_met_pt" , met_re         );
     thisTree->assignVar( "reb_brunos_met_phi", metphi_re      );
+    thisTree->assignVector( "gen_jet_pt"   , gen_jet_pt   );
+    thisTree->assignVector( "gen_jet_eta"  , gen_jet_eta  );
+    thisTree->assignVector( "gen_jet_phi"  , gen_jet_phi  );
+    thisTree->assignVector( "gen_jet_mass" , gen_jet_mass );
+    thisTree->assignVector( "mc_jet_pt"    , mc_jet_pt    );
     thisTree->assignVector( "before_jet_pt", all_jet_pt   );
     thisTree->assignVector( "reb_jet_pt"   , reb_jet_pt   );
     thisTree->assignVector( "jet_eta"      , all_jet_eta  );
     thisTree->assignVector( "jet_phi"      , all_jet_phi  );
     thisTree->assignVector( "jet_mass"     , all_jet_mass );
     thisTree->assignVector( "jet_puId"     , all_jet_puId );
-    thisTree->assignVector( "jet_id"       , all_jet_id );
+    thisTree->assignVector( "jet_id"       , all_jet_id   );
     thisTree->assignVector( "jet_btagCSV"  , all_jet_btagCSV );
 
 
@@ -442,12 +507,8 @@ void rebalance( const MT2Sample& sample, MT2Analysis<MT2EstimateTree>* anaTree )
   anaTree->finalize();
 
 
-  delete tree;
-
 
   file->Close();
-  delete file;
-  
 
   std::cout << " ---> Rebalancing finished" << std::endl;
 
@@ -531,8 +592,10 @@ void fcn(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag){
   Double_t softPxTrue=0, softPyTrue=0;
   for (int j=0; j<Nj; j++) {
     updateIndex(j,par[j]); // the binning is gen Pt, find the corresponding bin
-    logl += TMath::Log(getResponseProb(par[j], jPtIndex[j], jEtaIndex[j])); // take appropriate response function
-    //logl += TMath::Log(getResponseProbGaus(par[j], jPtIndex[j], jEtaIndex[j])); // take appropriate response function (only gaussian)
+    if (!onlyGausCore)
+      logl += TMath::Log(getResponseProb(par[j], jPtIndex[j], jEtaIndex[j])); // take appropriate response function
+    else
+      logl += TMath::Log(getResponseProbGaus(par[j], jPtIndex[j], jEtaIndex[j])); // take appropriate response function (only gaussian)
     softPxTrue -= jPtReco[j]*TMath::Cos(jPhiReco[j])/par[j];
     softPyTrue -= jPtReco[j]*TMath::Sin(jPhiReco[j])/par[j];
   }
