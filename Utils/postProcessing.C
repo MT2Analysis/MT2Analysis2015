@@ -33,6 +33,8 @@ run()
 #include "btagSF.C"
 #include "leptonSF.h"
 
+#include "get_gaugino.C"
+
 using namespace std;
 
 int postProcessing(std::string inputString="input",
@@ -59,6 +61,7 @@ int run(std::string cfg="postProcessing.cfg",
 	std::string PUvar = "nTrueInt",
 	bool applyJSON=true){
   
+
   // for measuring timing
   time_t start = time(0);
 
@@ -89,11 +92,11 @@ int run(std::string cfg="postProcessing.cfg",
     int debug=0;
     if(debug){
       std::cout << "id,name,x,f,k: " 
-	   << id << " , " 
-	   << name << " , "
-	   << xsec << " , " 
-	   << filter << " , " 
-	   << kfactor << std::endl;
+		<< id << " , " 
+		<< name << " , "
+		<< xsec << " , " 
+		<< filter << " , " 
+		<< kfactor << std::endl;
     }  
 
     std::string outputFile = outputFolder + "/" + name + fileExtension;
@@ -123,17 +126,19 @@ int postProcessing(std::string inputString,
 
   double totalSumGenWeightsHisto, topAverageWeight, isrAverageWeight, weight_btag_average, weight_btag_heavy_UP_average, weight_btag_heavy_DN_average, weight_btag_light_UP_average, weight_btag_light_DN_average;
  
-  TH2F* h_isr;
-  TH2F* h_isr_UP;
-  TH2F* h_isr_DN;
-  TH2F* h_totalSumGenWeightsHisto;
+  TH2F* h_isr=0;
+  TH2F* h_isr_UP=0;
+  TH2F* h_isr_DN=0;
+  TH2F* h_totalSumGenWeightsHisto=0;
 
-  TH2F* h_btag;
-  TH2F* h_btag_heavy_UP;
-  TH2F* h_btag_heavy_DN;
-  TH2F* h_btag_light_UP;
-  TH2F* h_btag_light_DN;
+  TH2F* h_btag=0;
+  TH2F* h_btag_heavy_UP=0;
+  TH2F* h_btag_heavy_DN=0;
+  TH2F* h_btag_light_UP=0;
+  TH2F* h_btag_light_DN=0;
 
+
+  std::cout << "normfile =" << normFile << "<this" << std::endl;
 
   if( normFile!="" ){
     ifstream configuration( Form("%s.cfg", normFile.c_str()) );
@@ -157,7 +162,7 @@ int postProcessing(std::string inputString,
       //ss >> topAverageWeight;
 
       std::cout<< "Got a line with " << std::endl;
-      std::cout<< "sumGenWeightsHisto = " << totalSumGenWeightsHisto << std::endl;
+      std::cout<< "totalsumGenWeightsHisto = " << totalSumGenWeightsHisto << std::endl;
       std::cout<< "weight_isr_av    = " << isrAverageWeight << std::endl;
       std::cout<< "weight_btag_av    = " << weight_btag_average << std::endl;
       //      std::cout<< "weight_topPt_av    = " << topAverageWeight << std::endl;
@@ -174,6 +179,9 @@ int postProcessing(std::string inputString,
       h_btag_light_DN = (TH2F*) f_temp->Get("h_btag_light_DN");
 
       h_totalSumGenWeightsHisto = (TH2F*) f_temp->Get("h_totalSumGenWeightsHisto");
+
+      std::cout<< "sumGenWeightsHisto = " << h_totalSumGenWeightsHisto->GetBinContent(28,3) << std::endl;
+      std::cout<< "sumGenWeightsHisto = " << h_totalSumGenWeightsHisto->GetBinContent(28,8) << std::endl;
 
       if (!h_totalSumGenWeightsHisto || !h_isr || !h_btag ) std::cout << "ERROR: Could not find averaging histogram"<< std::endl;
     }
@@ -210,8 +218,8 @@ int postProcessing(std::string inputString,
   // TH1D* h_muTrk_hi = 0;
   // TH1D* h_muTrk_lo = 0;
  
-  // TH2D* h_fast_muSF = 0;
-  // TH2D* h_fast_elSF = 0;
+  TH2D* h_fast_muSF = 0;
+  TH2D* h_fast_elSF = 0;
   // TH2D* h_eff_full_mu = 0;
   // TH2D* h_eff_full_el = 0;
  
@@ -226,86 +234,6 @@ int postProcessing(std::string inputString,
     setElHistos("",""); 
     setMuHistos("","","");
     setVetoEffHistos("");
-
-    // //Getting the lepton scale factor histograms/////////////////
-    // //Electrons//
-    // std::string filename = "/mnt/t3nfs01/data01/shome/mschoene/lepSF/scaleFactors.root";
-    // TFile * f_ele = new TFile(filename.c_str() );
-    // if (!f_ele->IsOpen()) std::cout << " ERROR: Could not find scale factor file " << filename << std::endl; 
-    // //Uncomment for loose Id
-    // //TH2D* h_id = (TH2D*) f_ele->Get("CutBasedLoose");
-    // //(TH2D*) f_ele->Get("CutBasedVeto");
-    // h_id = (TH2D*) f_ele->Get("GsfElectronToVeto");
-    // h_iso = (TH2D*) f_ele->Get("MVAVLooseElectronToMini");
-    // if (!h_id || !h_iso) std::cout << "ERROR: Could not find scale factor histogram"<< std::endl;
-    // h_elSF = (TH2D*) h_id->Clone("h_elSF");
-    // h_elSF->SetDirectory(0);
-    // h_elSF->Multiply(h_iso);
-
-    // std::string filenameElTrk = "/mnt/t3nfs01/data01/shome/mschoene/lepSF/egammaEffi_SF2D.root";
-    // TFile * f_eleTrk = new TFile(filenameElTrk.c_str() );
-    // if (!f_eleTrk->IsOpen()) std::cout << " ERROR: Could not find scale factor file " << filenameElTrk << std::endl; 
-    // h_elTrk = (TH2D*) f_eleTrk->Get("EGamma_SF2D");
-    // h_elTrk->SetDirectory(0);
-    // f_eleTrk->Close(); delete f_eleTrk; 
-
-
-    // //Muons//
-    // std::string filenameID = "/mnt/t3nfs01/data01/shome/mschoene/lepSF/TnP_MuonID_NUM_LooseID_DENOM_generalTracks_VAR_map_pt_eta.root";
-    // std::string filenameISO = "/mnt/t3nfs01/data01/shome/mschoene/lepSF/TnP_MuonID_NUM_MiniIsoTight_DENOM_LooseID_VAR_map_pt_eta.root";
-    // std::string filenamedxyz = "/mnt/t3nfs01/data01/shome/mschoene/lepSF/TnP_MuonID_NUM_MediumIP2D_DENOM_LooseID_VAR_map_pt_eta.root";
-    // TFile * f1 = new TFile(filenameID.c_str() );
-    // TFile * f2 = new TFile(filenameISO.c_str() );
-    // TFile * f3 = new TFile(filenamedxyz.c_str() );
-    // if (!f1->IsOpen()) { std::cout<<" ERROR: Could not find ID scale factor file "<<filenameID<<std::endl; return 0;}
-    // if (!f2->IsOpen()) { std::cout<<"ERROR: Could not find ISO scale factor file "<<filenameISO<<std::endl; return 0;}
-    // if (!f3->IsOpen()) { std::cout<<"ERROR: Could not find dxy dz scale factor file "<<filenamedxyz<<std::endl; return 0;}
-    // h_id_mu = (TH2D*) f1->Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0");
-    // h_iso_mu = (TH2D*) f2->Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0_&_PF_pass");
-    // h_dxyz_mu = (TH2D*) f3->Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0_&_PF_pass");
-    // if (!h_id_mu || !h_iso_mu  || !h_dxyz_mu) { std::cout<<"ERROR: Could not find scale factor histogram"<<std::endl; return 0;}
-    // h_muSF = (TH2D*) h_id_mu->Clone("h_muSF");
-    // h_muSF->SetDirectory(0);
-    // h_muSF->Multiply(h_iso_mu);
-    // h_muSF->Multiply(h_dxyz_mu);
-
-    // f_ele->Close();  f1->Close(); f2->Close();
-    // delete f_ele; delete f1; delete f2;
-
-    // TH1D* h_trk_mu_hi = 0;
-    // TH1D* h_trk_mu_lo = 0;
-
-    // std::string filenameTrk = "/mnt/t3nfs01/data01/shome/mschoene/lepSF/general_tracks_and_early_general_tracks_corr_ratio.root";
-    // TFile * fTrk = new TFile(filenameTrk.c_str() );
-    // if (!fTrk->IsOpen()) { std::cout<<" ERROR: Could not find track ineff scale factor file "<<filenameTrk<<std::endl; return 0;}
-    // h_trk_mu_hi = (TH1D*) fTrk->Get("mutrksfptg10");
-    // if (!h_trk_mu_hi) { std::cout<<"ERROR: Could not find trk sf histogram"<<std::endl; return 0;}
-    // h_muTrk_hi = (TH1D*) h_trk_mu_hi->Clone("h_muTrk_hi");
-    // h_muTrk_hi->SetDirectory(0);
-    // h_trk_mu_lo = (TH1D*) fTrk->Get("mutrksfptl10");
-    // if (!h_trk_mu_lo) { std::cout<<"ERROR: Could not find trk sf histogram"<<std::endl; return 0;}
-    // h_muTrk_lo = (TH1D*) h_trk_mu_lo->Clone("h_muTrk_lo");
-    // h_muTrk_lo->SetDirectory(0);
-    // fTrk->Close(); delete fTrk;
-
-
-    // std::cout << std::endl;
-    // std::cout << "Using Loose Muon ID, MiniIso 0.2 lepton scale factors" << std::endl;
-    // std::cout << "Using Veto Electrons ID, MiniIso 0.1 lepton scale factors" << std::endl;
-    // std::cout << "Be aware that Veto Electrons are not suited for selecting Electrons." << std::endl;
-    // std::cout << std::endl;
-
-    // std::cout << "Also loading the FullSim efficiency map" << std::endl;
-    // TFile * f_eff_full = new TFile("/mnt/t3nfs01/data01/shome/mschoene/CMSSW_7_4_12_pP/src/analysisCode/Utils/vetoeff_emu_etapt_lostlep.root" );
-    // if(!f_eff_full->IsOpen()) {std::cout<<" ERROR: Could not find muon Fullsim scale factor file" <<std::endl; return 0;}
-    // h_eff_full_mu = (TH2D*) f_eff_full->Get("h_mu_comb_eff");
-    // h_eff_full_el = (TH2D*) f_eff_full->Get("h_ele_comb_eff");
-    // if(!h_eff_full_mu || !h_eff_full_el ) {std::cout << " ERROR: Could not find the 2D histogram in your files " << std::endl; return 0;}
-    // h_eff_full_mu->SetDirectory(0);
-    // h_eff_full_el->SetDirectory(0);
-    // f_eff_full->Close();
-    // delete f_eff_full;
-
 
     if( id >= 1000 && id<=2000 ){
       std::cout << "Also loading the FastSim/FullSim Lepton scale factors" << std::endl;
@@ -337,6 +265,35 @@ int postProcessing(std::string inputString,
       delete f_eff_fast;
     }
   }
+
+
+  std::cout << "Filling the histo with the EW xsec hino" << std::endl;
+
+  TH1F* h_xsec_EW = new TH1F("h_xsec_EW", "", 1001, -0.5, 1000.5);
+  for( int  massIt =0; massIt<1001; massIt++){
+    float xsec_EW = get_gaugino("CN","hino", massIt);
+    Int_t binx = h_xsec_EW->GetXaxis()->FindBin( massIt );
+    h_xsec_EW->SetBinContent( binx-1, xsec_EW ); // for correct mapping, bin -1 
+  }
+
+
+  TH1F* h_xsec_EW_wino = new TH1F("h_xsec_EW_wino", "", 1001, -0.5, 1000.5);
+  for( int  massIt =0; massIt<1001; massIt++){
+    float xsec_EW_wino = get_gaugino("C1N2","wino", massIt);
+    Int_t binx = h_xsec_EW_wino->GetXaxis()->FindBin( massIt );
+    h_xsec_EW_wino->SetBinContent( binx-1, xsec_EW_wino ); // for correct mapping, bin -1 
+  }
+
+  std::cout <<   h_xsec_EW->GetBinContent( 127) << std::endl;
+  std::cout <<   h_xsec_EW->GetBinContent( 128) << std::endl;
+  std::cout <<   get_gaugino("CN","hino", 127) << std::endl;
+ 
+  std::cout << "Filling the histo with the EW xsec bino" << std::endl;
+
+
+  std::cout <<   h_xsec_EW_wino->GetBinContent( 127) << std::endl;
+  std::cout <<   h_xsec_EW_wino->GetBinContent( 128) << std::endl;
+  std::cout <<   get_gaugino("C1N2","wino", 127) << std::endl;
 
 
   TChain* chain = new TChain(treeName.c_str());
@@ -510,8 +467,10 @@ int postProcessing(std::string inputString,
   //  std::cout << hPU_r->GetBinContent(1)<< std::endl;
 
   //  float scale1fb = xsec*kfactor*1000*filter/(Float_t)nEventsHisto;
-  ULong64_t sumGenWeightsHisto; 
-  ULong64_t nEffEventsHisto; 
+  Long64_t sumGenWeightsHisto; 
+  Long64_t nEffEventsHisto; 
+  //  ULong64_t sumGenWeightsHisto; 
+  //  ULong64_t nEffEventsHisto; 
   float scale1fb_noGenWeight;
   float scale1fb_sumGenWeights;
   float scale1fb;
@@ -542,6 +501,21 @@ int postProcessing(std::string inputString,
   Float_t weight_lepsf_0l_DN;
 
 
+  //For invariant mass of the diphoton system
+  Int_t ngamma;
+  chain->SetBranchAddress("ngamma", &ngamma);
+  Float_t gamma_pt[100];
+  chain->SetBranchAddress("gamma_pt", gamma_pt);
+  Float_t gamma_eta[100];
+  chain->SetBranchAddress("gamma_eta", gamma_eta);
+  Float_t gamma_phi[100];
+  chain->SetBranchAddress("gamma_phi", gamma_phi);
+  Float_t gamma_mass[100];
+  chain->SetBranchAddress("gamma_mass", gamma_mass);
+  Float_t gamma_chHadIso[100];
+  chain->SetBranchAddress("gamma_chHadIso", gamma_chHadIso);
+
+
   ////// Lepton Efficiency SF
   Int_t nlep;
   chain->SetBranchAddress("nlep", &nlep);
@@ -552,7 +526,6 @@ int postProcessing(std::string inputString,
   Int_t lep_pdgId[100];
   chain->SetBranchAddress("lep_pdgId", lep_pdgId);
   
-
   Int_t ngenLep;
   Float_t genLep_pt[100];
   Float_t genLep_eta[100];  
@@ -639,11 +612,13 @@ int postProcessing(std::string inputString,
     scale1fb_sumGenWeights = (Float_t) 0.0;
   }else{
  
-    sumGenWeightsHisto = (ULong64_t) newSumW->GetBinContent(1);
+    sumGenWeightsHisto = (Long64_t) newSumW->GetBinContent(1);
+    //    sumGenWeightsHisto = (ULong64_t) newSumW->GetBinContent(1);
     if( normFile!="" )
-      sumGenWeightsHisto =  totalSumGenWeightsHisto; 
+      sumGenWeightsHisto = totalSumGenWeightsHisto; 
 
-    nEffEventsHisto = ( (double) 1.0*sumGenWeightsHisto/genWeight_  > (ULong64_t) (1.0*sumGenWeightsHisto/genWeight_ + 0.5) ) ? (ULong64_t) (1.0*sumGenWeightsHisto/genWeight_ + 1.0) : (ULong64_t) (1.0*sumGenWeightsHisto/genWeight_);
+    nEffEventsHisto = ( (double) 1.0*sumGenWeightsHisto/genWeight_  > (Long64_t) (1.0*sumGenWeightsHisto/genWeight_ + 0.5) ) ? (Long64_t) (1.0*sumGenWeightsHisto/genWeight_ + 1.0) : (Long64_t) (1.0*sumGenWeightsHisto/genWeight_);
+    // nEffEventsHisto = ( (double) 1.0*sumGenWeightsHisto/genWeight_  > (ULong64_t) (1.0*sumGenWeightsHisto/genWeight_ + 0.5) ) ? (ULong64_t) (1.0*sumGenWeightsHisto/genWeight_ + 1.0) : (ULong64_t) (1.0*sumGenWeightsHisto/genWeight_);
   
     scale1fb_noGenWeight = xsec*kfactor*1000*filter/(Float_t)nEffEventsHisto;
     scale1fb_sumGenWeights = xsec*kfactor*1000*filter/(Float_t)sumGenWeightsHisto;
@@ -677,8 +652,14 @@ int postProcessing(std::string inputString,
   TBranch* b12 = clone->Branch("isGolden", &isGolden, "isGolden/I");
   TBranch* b13 = clone->Branch("isSilver", &isSilver, "isSilver/I");
  
-  TBranch* b14 = 0;
-  TBranch* b15 = 0; 
+
+  float h_mass;
+  TBranch* b14 = clone->Branch("h_mass", &h_mass, "h_mass/F");
+ 
+  float h_pt;
+  TBranch* b15 = clone->Branch("h_pt", &h_pt, "h_pt/F");
+ 
+ 
   TBranch* b16 = 0;
   TBranch* b17 = 0;
   TBranch* b18 = 0;
@@ -705,11 +686,15 @@ int postProcessing(std::string inputString,
   TBranch* b37 = 0; 
   TBranch* b38 = 0; 
 
+  TBranch* b39 = 0;
+  TBranch* b40 = 0; 
+
   bool doIsrAv = 1;
   
   if( applySF ){
-    b14 = clone->Branch("weight_btagsf"         , &weight_btagsf         , "weight_btagsf/F"         );
-    b15 = clone->Branch("weight_btagsf_heavy_UP", &weight_btagsf_heavy_UP, "weight_btagsf_heavy_UP/F");
+    b39 = clone->Branch("weight_btagsf"         , &weight_btagsf         , "weight_btagsf/F"         );
+    b40 = clone->Branch("weight_btagsf_heavy_UP", &weight_btagsf_heavy_UP, "weight_btagsf_heavy_UP/F");
+
     b16 = clone->Branch("weight_btagsf_heavy_DN", &weight_btagsf_heavy_DN, "weight_btagsf_heavy_DN/F");
     b17 = clone->Branch("weight_btagsf_light_UP", &weight_btagsf_light_UP, "weight_btagsf_light_UP/F");
     b18 = clone->Branch("weight_btagsf_light_DN", &weight_btagsf_light_DN, "weight_btagsf_light_DN/F");
@@ -742,8 +727,8 @@ int postProcessing(std::string inputString,
   }
 
 
-  vector<TH2F*> h_scales;
-  vector<TH2F*> h_evt;
+  // std::vector<TH2F*> h_scales;
+  // std::vector<TH2F*> h_evt;
 
   //ISR /// bins of size 5GeV for T2cc
   Int_t nBins = 120*5;
@@ -751,8 +736,11 @@ int postProcessing(std::string inputString,
   Float_t max = 3012.5;
 
   Float_t weight_isr_av_firstLoop;
+  Float_t isr_err_firstLoop;
   if(normFile=="" && id>1000 && id<2000 ){
     h_isr = new TH2F("h_isr", "", nBins, min, max, nBins, -min, max-min); h_isr->Sumw2();
+    h_isr_UP = new TH2F("h_isr_UP", "", nBins, min, max, nBins, -min, max-min); h_isr_UP->Sumw2();
+    h_isr_DN = new TH2F("h_isr_DN", "", nBins, min, max, nBins, -min, max-min); h_isr_DN->Sumw2();
   
     h_btag = new TH2F("h_btag", "", nBins, min, max, nBins, -min, max-min); h_btag->Sumw2();
     h_btag_heavy_UP = new TH2F("h_btag_heavy_UP", "", nBins, min, max, nBins, -min, max-min); h_btag_heavy_UP->Sumw2();
@@ -765,8 +753,15 @@ int postProcessing(std::string inputString,
   Int_t GenSusyMNeutralino;
   Int_t GenSusyMGluino;
 
-  if( (id>1000&& id<2000) ){
+  Int_t GenSusyMNeutralino2;
+
+  if( (id>1000 && id<2000) ){
     chain->SetBranchAddress("GenSusyMNeutralino", &GenSusyMNeutralino);
+
+    chain->SetBranchAddress("GenSusyMNeutralino2", &GenSusyMNeutralino2);
+
+    std::cout << "Normfile name = " << normFile << std::endl;
+
 
     if(  normFile.find("T2bb") != std::string::npos ){
       std::cout << "FOUND T2bb " << std::endl;  
@@ -784,110 +779,152 @@ int postProcessing(std::string inputString,
       std::cout << "FOUND T1* " << std::endl;  
       chain->SetBranchAddress("GenSusyMGluino", &GenSusyMGluino);
 
-    }	else std::cout << "Fuck" << std::endl;
+    }else if(  normFile.find("TChi") != std::string::npos ){
+      std::cout << "FOUND TChi* " << std::endl;  
+      chain->SetBranchAddress("GenSusyMNeutralino2", &GenSusyMGluino);
+      //chain->SetBranchAddress("GenSusyMGluino", &GenSusyMNeutralino2);
+
+    } if(  normFile.find("T2bH") != std::string::npos ){
+      std::cout << "FOUND T2bH " << std::endl;  
+      chain->SetBranchAddress("GenSusyMSbottom", &GenSusyMGluino);
+    }
+
+    else std::cout << "Fuck" << std::endl;
+    //else chain->SetBranchAddress("GenSusyMNeutralino2", &GenSusyMGluino);
+   
+
   }
 
   double isr_average = 1.;
    
-  if( applySF  ){
+  if( applySF==1  ){
 
-    if( id>1000 && id<2000) {
-      for(int k=0;k<110;k++){
-	std::string name = "var"+  std::to_string(k);
-	TH2F* h_scales_temp = new TH2F(name.c_str(), "", nBins, min, max, nBins, -min, max-min); h_scales_temp->Sumw2();
-	h_scales.push_back(h_scales_temp);
+    // if( id>1000 && id<2000) {
+    //   for(int k=0;k<110;k++){
+    // 	std::string name = "var"+  std::to_string(k);
+    // 	TH2F* h_scales_temp = new TH2F(name.c_str(), "", nBins, min, max, nBins, -min, max-min); h_scales_temp->Sumw2();
+    // 	h_scales.push_back(h_scales_temp);
  
-	std::string name_evt = "evt"+  std::to_string(k); 
-	TH2F* h_evt_temp = new TH2F(name_evt.c_str(), "", nBins, min, max, nBins, -min, max-min); h_evt_temp->Sumw2();
-	h_evt.push_back(h_evt_temp);
-      }
-    }
+    // 	std::string name_evt = "evt"+  std::to_string(k); 
+    // 	TH2F* h_evt_temp = new TH2F(name_evt.c_str(), "", nBins, min, max, nBins, -min, max-min); h_evt_temp->Sumw2();
+    // 	h_evt.push_back(h_evt_temp);
+    //   }
+    // }
 
 
-    if( normFile=="" ){
+    if( normFile=="" && id>1000 ){
 
       std::cout << "Entering first loop to determine the average ISR weights" << std::endl;
       for(  ULong64_t j = 0; j < nEventsTree; j++) {
     
-	chain->GetEntry(j);
+  	chain->GetEntry(j);
+
+  	//TCHiHV are 1D scans, so I just need 1 row of the histogram
+  
+	// if(id>=1500&& id<1510){
+  	//   GenSusyMGluino = GenSusyMNeutralino2;
+  	//   GenSusyMNeutralino = 1;
+
+	//   //std::cout << GenSusyMGluino << "  " << GenSusyMNeutralino << std::endl;
+  	// }
+   
  
-	if(normFile==""){
-	  weight_isr_av_firstLoop = 1.0;
+  	if(normFile==""){
+  	  weight_isr_av_firstLoop = 1.0;
+
+	  isr_err_firstLoop = 0.;
      
-	  //NEW method with number of ISR jets
+  	  //NEW method with number of ISR jets
 
-	  if( nisrMatch == 1 )      weight_isr_av_firstLoop = 0.882;
-	  else if( nisrMatch == 2 ) weight_isr_av_firstLoop = 0.792;
-	  else if( nisrMatch == 3 ) weight_isr_av_firstLoop = 0.702;
-	  else if( nisrMatch == 4 ) weight_isr_av_firstLoop = 0.648;
-	  else if( nisrMatch == 5 ) weight_isr_av_firstLoop = 0.601;
-	  else if( nisrMatch > 5 )  weight_isr_av_firstLoop = 0.515;
+  	  if( nisrMatch == 1 ){
+	    weight_isr_av_firstLoop = 0.920;    isr_err_firstLoop = 0.040;
+	  } else if( nisrMatch == 2 ){ 
+	    weight_isr_av_firstLoop = 0.821;    isr_err_firstLoop = 0.090;
+	  } else if( nisrMatch == 3 ){ 
+	    weight_isr_av_firstLoop = 0.715;    isr_err_firstLoop = 0.143;
+	  } else if( nisrMatch == 4 ){ 
+	    weight_isr_av_firstLoop = 0.662;    isr_err_firstLoop = 0.169;
+	  } else if( nisrMatch == 5 ){ 
+	    weight_isr_av_firstLoop = 0.561;    isr_err_firstLoop = 0.219;
+	  } else if( nisrMatch > 5 ){  
+	    weight_isr_av_firstLoop = 0.511;    isr_err_firstLoop = 0.244;
+	  }
+
+	  // old values
+  	  // if( nisrMatch == 1 )      weight_isr_av_firstLoop = 0.882;
+  	  // else if( nisrMatch == 2 ) weight_isr_av_firstLoop = 0.792;
+  	  // else if( nisrMatch == 3 ) weight_isr_av_firstLoop = 0.702;
+  	  // else if( nisrMatch == 4 ) weight_isr_av_firstLoop = 0.648;
+  	  // else if( nisrMatch == 5 ) weight_isr_av_firstLoop = 0.601;
+  	  // else if( nisrMatch > 5 )  weight_isr_av_firstLoop = 0.515;
  
-	  if(id>10 && (id<1000 || id>2000) )
-	    isr_average += weight_isr_av_firstLoop;
-	  else{
-	    h_isr->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino,  weight_isr_av_firstLoop);
-	    h_counter->Fill((float)GenSusyMGluino,(float)GenSusyMNeutralino,  1.0);
-	  }
+  	  if(id>10 && (id<1000 || id>2000) )
+  	    isr_average += weight_isr_av_firstLoop;
+  	  else{
+  	    h_isr   ->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino,  weight_isr_av_firstLoop);
+  	    h_isr_UP->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino,  weight_isr_av_firstLoop + isr_err_firstLoop);
+  	    h_isr_DN->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino,  weight_isr_av_firstLoop - isr_err_firstLoop);
 
-	  if( id>1000 && id<2000){
-	    Float_t weight_btagsf = 1.0;
-	    Float_t weight_btagsf_heavy_UP = 1.0;
-	    Float_t weight_btagsf_heavy_DN = 1.0;
-	    Float_t weight_btagsf_light_UP = 1.0;
-	    Float_t weight_btagsf_light_DN = 1.0;
+  	    h_counter->Fill((float)GenSusyMGluino,(float)GenSusyMNeutralino,  1.0);
+  	  }
+
+  	  if( id>1000 && id<2000){
+  	    Float_t weight_btagsf = 1.0;
+  	    Float_t weight_btagsf_heavy_UP = 1.0;
+  	    Float_t weight_btagsf_heavy_DN = 1.0;
+  	    Float_t weight_btagsf_light_UP = 1.0;
+  	    Float_t weight_btagsf_light_DN = 1.0;
 	  
-	    bTagSFHelper->get_weight_btag(njet, jet_pt, jet_eta, jet_mcFlavour, jet_btagCSV, weight_btagsf, weight_btagsf_heavy_UP, weight_btagsf_heavy_DN, weight_btagsf_light_UP, weight_btagsf_light_DN, isFastSim);
+  	    bTagSFHelper->get_weight_btag(njet, jet_pt, jet_eta, jet_mcFlavour, jet_btagCSV, weight_btagsf, weight_btagsf_heavy_UP, weight_btagsf_heavy_DN, weight_btagsf_light_UP, weight_btagsf_light_DN, isFastSim);
 
-	    h_btag->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino, weight_btagsf );
-	    h_btag_heavy_UP->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino, weight_btagsf_heavy_UP );
-	    h_btag_heavy_DN->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino, weight_btagsf_heavy_DN );
-	    h_btag_light_UP->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino, weight_btagsf_light_UP );
-	    h_btag_light_DN->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino, weight_btagsf_light_DN );
-	  }
+  	    h_btag->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino, weight_btagsf );
+  	    h_btag_heavy_UP->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino, weight_btagsf_heavy_UP );
+  	    h_btag_heavy_DN->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino, weight_btagsf_heavy_DN );
+  	    h_btag_light_UP->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino, weight_btagsf_light_UP );
+  	    h_btag_light_DN->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino, weight_btagsf_light_DN );
+  	  }
 
-	}
+  	}
       
-	if( id < 2000. && id > 1000.){
-	  for(int v=0; v<110; ++v){
-	    weight_scales[v] = 1.;
-	    weight_scales[v] = LHEweight_wgt[v]/LHEweight_original;
+  	// if( id < 2000. && id > 1000.){
+  	//   for(int v=0; v<110; ++v){
+  	//     weight_scales[v] = 1.;
+  	//     weight_scales[v] = LHEweight_wgt[v]/LHEweight_original;
 
-	    h_scales[v]->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino,  weight_scales[v]);
-	    h_evt[v]->Fill((float)GenSusyMGluino,(float)GenSusyMNeutralino,  1.0);
-	  }
-	}
+  	//     h_scales[v]->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino,  weight_scales[v]);
+  	//     h_evt[v]->Fill((float)GenSusyMGluino,(float)GenSusyMNeutralino,  1.0);
+  	//   }
+  	// }
     
       }//end or first loop over events for calculating the average ISR
 
 
       if(normFile==""){
-	h_isr->Divide(h_counter);
+  	h_isr->Divide(h_counter);
+  	h_isr_UP->Divide(h_counter);
+  	h_isr_DN->Divide(h_counter);
 
   	h_btag->Divide(h_counter);
-	h_btag_heavy_UP->Divide(h_counter);
-	h_btag_heavy_DN->Divide(h_counter);
-	h_btag_light_UP->Divide(h_counter);
-	h_btag_light_DN->Divide(h_counter);
+  	h_btag_heavy_UP->Divide(h_counter);
+  	h_btag_heavy_DN->Divide(h_counter);
+  	h_btag_light_UP->Divide(h_counter);
+  	h_btag_light_DN->Divide(h_counter);
       }
     
-      if( id<2000 && id>1000. ){
-	for(int v=0; v<110; ++v){
-	  h_scales[v]->Divide(h_evt[v]);
-	}
-      }
+      // if( id<2000 && id>1000. ){
+      // 	for(int v=0; v<110; ++v){
+      // 	  h_scales[v]->Divide(h_evt[v]);
+      // 	}
+      // }
     } //end of if normfile, ie this is only done if not split
     
-    /* 
-       for(int l = 0; l<120*5; l++){
-       for(int m = 0; m<120*5; m++){
-	if( h_scales[5]->GetBinContent(l,m) > 0.5)
-	  std::cout << l<< ", " << m << " has content " <<h_scales[5]->GetBinContent(l,m)  << std::endl;
-      }
-    }    
-    */
+    /*        for(int l = 0; l<120*5; l++){  for(int m = 0; m<120*5; m++){
+  	if( h_scales[5]->GetBinContent(l,m) > 0.5)
+  	  std::cout << l<< ", " << m << " has content " <<h_scales[5]->GetBinContent(l,m)  << std::endl;   }    }     */
+
     std::cout << "Finished first loop over the events to get the average weight of ISR" << std::endl;
   }//end of ISR norm histo calculation
+
 
   if( normFile=="" && id>10 )
     isr_average /= (double) nEventsTree;
@@ -939,10 +976,13 @@ int postProcessing(std::string inputString,
 
   std::cout << "Entering the final loop over the events" << std::endl;
 
+  //  for( Long64_t i = 0; i < 5000 ; i++) {
   for( Long64_t i = 0; i < (Long64_t)nEventsTree; i++) {
+
+   if( i % 100000 == 0 ) std::cout << "    Entry: " << i << " / " << (Long64_t)nEventsTree  << std::endl;
   
-    if( i==0)
-      std::cout << "Start of loop over tree entries" << std::endl;
+    // if( i==0)
+    //   std::cout << "Start of loop over tree entries" << std::endl;
 
     
     weight_btag_average = 1.;
@@ -971,22 +1011,80 @@ int postProcessing(std::string inputString,
       weight_scales[v]=1.;
       weight_scales_av[v]=1.;
     }
-    
+
+    h_mass = -999;    
+    h_pt = -999;    
 
     chain->GetEntry(i);
 
+
+    //TCHiHV are 1D scans, so I just need 1 row of the histogram
+    //if(id>1500&& id<1510){
+      //GenSusyMGluino = GenSusyMNeutralino2; // to be sure though it should already be the same...
+      //GenSusyMNeutralino = 1;
+      // std::cout << GenSusyMGluino << "  " << GenSusyMNeutralino << std::endl;
+    //}
+
+    bool doDiPhoton = 1;
+    if(doDiPhoton){
+      if( ngamma>=2 ){
+
+
+	//Need the lorentz vectors of the photons first
+	TLorentzVector *LVec = new TLorentzVector[ngamma];
+	int ngam = 0;
+
+	for(int i=0; i< ngamma; i++)
+	  if( gamma_chHadIso[i] <= 2.5 ){
+	    LVec[ngam].SetPtEtaPhiM(gamma_pt[ngam], gamma_eta[ngam],gamma_phi[ngam], gamma_mass[ngam]); 
+	    ngam++;
+	  }
+	
+	TLorentzVector Hvec;	  
+	if( ngam>=2 ){
+	  Hvec = LVec[0] + LVec[1]; //gamma invariant mass of the two leading, resonably isolated photons
+ 	  h_mass = Hvec.M();
+	  h_pt   = Hvec.Perp();
+	}
+	
+      }
+    }
+
+    Float_t xsec_EW = 1.;
     if(isData){ 
       //data should never be rescaled with scale1fb when making plots
       //set scaler to zero so that user cannot miss the mistake
       scale1fb = 0.0; 
       puWeight = 1.0;
     }else{
-      if(id >= 1000 && id<2000. && normFile!=""){
+      if(id >= 1000 && id<2000. && normFile!="" ){
 	Int_t binx = h_totalSumGenWeightsHisto->GetXaxis()->FindBin( (float)GenSusyMGluino );
 	Int_t biny = h_totalSumGenWeightsHisto->GetYaxis()->FindBin( (float)GenSusyMNeutralino );
 	sumGenWeightsHisto = h_totalSumGenWeightsHisto->GetBinContent(binx,biny); // weight per mass point
+  
+	if(id>1500 && id <1510  && normFile!=""){
+
+	  Int_t binEW = h_xsec_EW->GetXaxis()->FindBin( (float)GenSusyMGluino );
+	  xsec_EW = h_xsec_EW->GetBinContent( binEW );
+
+	  if( i % 100000 == 0 ){   std::cout << "    Entry: " << i << " / " << (Long64_t)nEventsTree << " with xsec hino " << xsec_EW  << " and sumgenweights " << sumGenWeightsHisto  << std::endl;}
+
+	  if( id == 1502 ){//get wino xec for WH
+
+	    
+	    Int_t binEW_wino = h_xsec_EW_wino->GetXaxis()->FindBin( (float)GenSusyMGluino );
+	    xsec_EW = h_xsec_EW_wino->GetBinContent( binEW_wino );
+
+if( i % 100000 == 0 ){ 
+	      std::cout << "    Entry: " << i << " / " << (Long64_t)nEventsTree << " with xsec wino " << xsec_EW  << " and sumgenweights " << sumGenWeightsHisto  << std::endl;
+	      std::cout << sumGenWeightsHisto << std::endl;
+	    }
+	  }
+
+	}
       }
-      scale1fb = xsec*kfactor*1000.*filter*genWeight/(Float_t)sumGenWeightsHisto;
+ 
+      scale1fb = xsec_EW * xsec*kfactor*1000.*filter*genWeight/(Float_t)sumGenWeightsHisto;
  
       int nPU = ( PUvar == "nVert") ? nVert : nTrueInt;
       int puBin = (int) hPU_r->GetXaxis()->FindBin(nPU);
@@ -1005,18 +1103,33 @@ int postProcessing(std::string inputString,
       /////////ISR for all MC now//////////////
       //NEW method with number of ISR jets
       float isr_err = 0.;
+
+      // if( nisrMatch == 1 ){
+      // 	weight_isr = 0.882;	    isr_err = 0.059;
+      // }else if( nisrMatch == 2 ){
+      // 	weight_isr = 0.792;	    isr_err = 0.104;
+      // }else if( nisrMatch == 3 ){ 
+      // 	weight_isr = 0.702;	    isr_err = 0.149;
+      // }else if( nisrMatch == 4 ){
+      // 	weight_isr = 0.648;	    isr_err = 0.176;
+      // }else if( nisrMatch == 5 ){
+      // 	weight_isr = 0.601;	    isr_err = 0.199;
+      // }else if( nisrMatch > 5 ){  
+      // 	weight_isr = 0.515;	    isr_err = 0.242;
+      // }
+
       if( nisrMatch == 1 ){
-	weight_isr = 0.882;	    isr_err = 0.059;
-      }else if( nisrMatch == 2 ){
-	weight_isr = 0.792;	    isr_err = 0.104;
-      }else if( nisrMatch == 3 ){ 
-	weight_isr = 0.702;	    isr_err = 0.149;
-      }else if( nisrMatch == 4 ){
-	weight_isr = 0.648;	    isr_err = 0.176;
-      }else if( nisrMatch == 5 ){
-	weight_isr = 0.601;	    isr_err = 0.199;
-      }else if( nisrMatch > 5 ){  
-	weight_isr = 0.515;	    isr_err = 0.242;
+	weight_isr = 0.920;    isr_err = 0.040;
+      } else if( nisrMatch == 2 ){ 
+	weight_isr = 0.821;    isr_err = 0.090;
+      } else if( nisrMatch == 3 ){ 
+	weight_isr = 0.715;    isr_err = 0.143;
+      } else if( nisrMatch == 4 ){ 
+	weight_isr = 0.662;    isr_err = 0.169;
+      } else if( nisrMatch == 5 ){ 
+	weight_isr = 0.561;    isr_err = 0.219;
+      } else if( nisrMatch > 5 ){  
+	weight_isr = 0.511;    isr_err = 0.244;
       }
 
       double central = 1.;
@@ -1049,22 +1162,24 @@ int postProcessing(std::string inputString,
       weight_isr_UP_av = central_UP; 
       weight_isr_DN_av = central_DN;
 
+  
       weight_isr_UP = weight_isr + isr_err;
       weight_isr_DN = weight_isr - isr_err;
 
-      //Scale variations
-      if( id>=1000 && id<2000 ){
-	for(int v=0; v<110; ++v){
-	  weight_scales[v] = 1.;
-	  weight_scales_av[v] = 1.;
-	  weight_scales[v] = LHEweight_wgt[v]/LHEweight_original;
-	  //bins & binning are the same as for isr
-	  Int_t binx = h_scales[v]->GetXaxis()->FindBin( (float)GenSusyMGluino );
-	  Int_t biny = h_scales[v]->GetYaxis()->FindBin( (float)GenSusyMNeutralino );
-	  double scale_av = h_scales[v]->GetBinContent(binx,biny);
-	  weight_scales_av[v] = weight_scales[v] / scale_av;
-	}
-      }//finished scale weights
+
+      // //Scale variations
+      // if( id>=1000 && id<2000 ){
+      // 	for(int v=0; v<110; ++v){
+      // 	  weight_scales[v] = 1.;
+      // 	  weight_scales_av[v] = 1.;
+      // 	  weight_scales[v] = LHEweight_wgt[v]/LHEweight_original;
+      // 	  //bins & binning are the same as for isr
+      // 	  Int_t binx = h_scales[v]->GetXaxis()->FindBin( (float)GenSusyMGluino );
+      // 	  Int_t biny = h_scales[v]->GetYaxis()->FindBin( (float)GenSusyMNeutralino );
+      // 	  double scale_av = h_scales[v]->GetBinContent(binx,biny);
+      // 	  weight_scales_av[v] = weight_scales[v] / scale_av;
+      // 	}
+      // }//finished scale weights
 
 
       int foundTop=0;
@@ -1126,11 +1241,11 @@ int postProcessing(std::string inputString,
 	  float eta = fabs( lep_eta[o] );
 	  int pdgId = abs( lep_pdgId[o] );
 
-	  lepSF sf_struct = getLepSF( pt, eta, pdgId);
+	  // // // lepSF sf_struct = getLepSF( pt, eta, pdgId);
 
-	  weight_lepsf    *= sf_struct.sf;
-	  weight_lepsf_UP *= sf_struct.up;
-	  weight_lepsf_DN *= sf_struct.dn;
+	  // // // weight_lepsf    *= sf_struct.sf;
+	  // // // weight_lepsf_UP *= sf_struct.up;
+	  // // // weight_lepsf_DN *= sf_struct.dn;
 
 
 	  // float pt_cutoff = std::max( 10.1, std::min( 100., double(pt) ) );
@@ -1285,7 +1400,7 @@ int postProcessing(std::string inputString,
 
 	  // float pt_cutoff = std::max( 10.1, std::min( 100., double(pt) ) );
 	  // float pt_cutoff_eff = std::max( 5.1, std::min( 100., double(pt) ) );
-	  // float veto_eff = 1.; //just need one veto eff, not one for full and fast sim
+	  // float veto_eff = 1.; //just need one veto eff, not one for ful and fast sim
 
 	  // if ( abs( pdgId ) == 11) { 
 	  //   Int_t binx = h_elSF->GetXaxis()->FindBin(pt_cutoff);
@@ -1406,9 +1521,12 @@ int postProcessing(std::string inputString,
     b12->Fill();
     b13->Fill();
 
+    b14->Fill();
+    b15->Fill();
+
+
     if( applySF ){   
-      b14->Fill();
-      b15->Fill();
+
       b16->Fill();
       b17->Fill();
       b18->Fill();
@@ -1431,22 +1549,39 @@ int postProcessing(std::string inputString,
       b34->Fill();
       b35->Fill();
       b36->Fill();
+      b37->Fill();
+      b38->Fill();
+      b39->Fill();
+      b40->Fill();
+
     }
     
+
+
   }//end loop over events
   //-------------------------------------------------------------
 
 
   if(applySF &&id > 1000  && id<2000.){  
-    for(int k=0;k<110;k++){
-      delete h_scales[k];
-      delete h_evt[k];
-    }
+    // for(int k=0;k<110;k++){
+    //   delete h_scales[k];
+    //   delete h_evt[k];
+    // }
     if( h_isr )
       delete h_isr; 
+
+   if( h_isr_UP )
+      delete h_isr_UP; 
+
+   if( h_isr_DN )
+      delete h_isr_DN; 
     delete h_counter;
   }
-  //  if(bTagSFHelper) delete bTagSFHelper;
+
+  // std::cout << "deleting btag helper" << std::endl;
+  // if(bTagSFHelper) delete bTagSFHelper;
+  // std::cout << "deleting the btag helper" << std::endl;
+ 
   delete chain; 
   hPU->Write();
   hPU_data->Write();
@@ -1458,7 +1593,9 @@ int postProcessing(std::string inputString,
   delete newH;
   newSumW->Write();
   delete newSumW;
+  //  std::cout << "writing the clone" << std::endl;
   clone->Write();
+  std::cout << "writing the clone" << std::endl;
   delete clone;
   out->Close();
   delete out;
@@ -1466,3 +1603,104 @@ int postProcessing(std::string inputString,
   
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // //Getting the lepton scale factor histograms/////////////////
+    // //Electrons//
+    // std::string filename = "/mnt/t3nfs01/data01/shome/mschoene/lepSF/scaleFactors.root";
+    // TFile * f_ele = new TFile(filename.c_str() );
+    // if (!f_ele->IsOpen()) std::cout << " ERROR: Could not find scale factor file " << filename << std::endl; 
+    // //Uncomment for loose Id
+    // //TH2D* h_id = (TH2D*) f_ele->Get("CutBasedLoose");
+    // //(TH2D*) f_ele->Get("CutBasedVeto");
+    // h_id = (TH2D*) f_ele->Get("GsfElectronToVeto");
+    // h_iso = (TH2D*) f_ele->Get("MVAVLooseElectronToMini");
+    // if (!h_id || !h_iso) std::cout << "ERROR: Could not find scale factor histogram"<< std::endl;
+    // h_elSF = (TH2D*) h_id->Clone("h_elSF");
+    // h_elSF->SetDirectory(0);
+    // h_elSF->Multiply(h_iso);
+
+    // std::string filenameElTrk = "/mnt/t3nfs01/data01/shome/mschoene/lepSF/egammaEffi_SF2D.root";
+    // TFile * f_eleTrk = new TFile(filenameElTrk.c_str() );
+    // if (!f_eleTrk->IsOpen()) std::cout << " ERROR: Could not find scale factor file " << filenameElTrk << std::endl; 
+    // h_elTrk = (TH2D*) f_eleTrk->Get("EGamma_SF2D");
+    // h_elTrk->SetDirectory(0);
+    // f_eleTrk->Close(); delete f_eleTrk; 
+
+
+    // //Muons//
+    // std::string filenameID = "/mnt/t3nfs01/data01/shome/mschoene/lepSF/TnP_MuonID_NUM_LooseID_DENOM_generalTracks_VAR_map_pt_eta.root";
+    // std::string filenameISO = "/mnt/t3nfs01/data01/shome/mschoene/lepSF/TnP_MuonID_NUM_MiniIsoTight_DENOM_LooseID_VAR_map_pt_eta.root";
+    // std::string filenamedxyz = "/mnt/t3nfs01/data01/shome/mschoene/lepSF/TnP_MuonID_NUM_MediumIP2D_DENOM_LooseID_VAR_map_pt_eta.root";
+    // TFile * f1 = new TFile(filenameID.c_str() );
+    // TFile * f2 = new TFile(filenameISO.c_str() );
+    // TFile * f3 = new TFile(filenamedxyz.c_str() );
+    // if (!f1->IsOpen()) { std::cout<<" ERROR: Could not find ID scale factor file "<<filenameID<<std::endl; return 0;}
+    // if (!f2->IsOpen()) { std::cout<<"ERROR: Could not find ISO scale factor file "<<filenameISO<<std::endl; return 0;}
+    // if (!f3->IsOpen()) { std::cout<<"ERROR: Could not find dxy dz scale factor file "<<filenamedxyz<<std::endl; return 0;}
+    // h_id_mu = (TH2D*) f1->Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0");
+    // h_iso_mu = (TH2D*) f2->Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0_&_PF_pass");
+    // h_dxyz_mu = (TH2D*) f3->Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0_&_PF_pass");
+    // if (!h_id_mu || !h_iso_mu  || !h_dxyz_mu) { std::cout<<"ERROR: Could not find scale factor histogram"<<std::endl; return 0;}
+    // h_muSF = (TH2D*) h_id_mu->Clone("h_muSF");
+    // h_muSF->SetDirectory(0);
+    // h_muSF->Multiply(h_iso_mu);
+    // h_muSF->Multiply(h_dxyz_mu);
+
+    // f_ele->Close();  f1->Close(); f2->Close();
+    // delete f_ele; delete f1; delete f2;
+
+    // TH1D* h_trk_mu_hi = 0;
+    // TH1D* h_trk_mu_lo = 0;
+
+    // std::string filenameTrk = "/mnt/t3nfs01/data01/shome/mschoene/lepSF/general_tracks_and_early_general_tracks_corr_ratio.root";
+    // TFile * fTrk = new TFile(filenameTrk.c_str() );
+    // if (!fTrk->IsOpen()) { std::cout<<" ERROR: Could not find track ineff scale factor file "<<filenameTrk<<std::endl; return 0;}
+    // h_trk_mu_hi = (TH1D*) fTrk->Get("mutrksfptg10");
+    // if (!h_trk_mu_hi) { std::cout<<"ERROR: Could not find trk sf histogram"<<std::endl; return 0;}
+    // h_muTrk_hi = (TH1D*) h_trk_mu_hi->Clone("h_muTrk_hi");
+    // h_muTrk_hi->SetDirectory(0);
+    // h_trk_mu_lo = (TH1D*) fTrk->Get("mutrksfptl10");
+    // if (!h_trk_mu_lo) { std::cout<<"ERROR: Could not find trk sf histogram"<<std::endl; return 0;}
+    // h_muTrk_lo = (TH1D*) h_trk_mu_lo->Clone("h_muTrk_lo");
+    // h_muTrk_lo->SetDirectory(0);
+    // fTrk->Close(); delete fTrk;
+
+
+    // std::cout << std::endl;
+    // std::cout << "Using Loose Muon ID, MiniIso 0.2 lepton scale factors" << std::endl;
+    // std::cout << "Using Veto Electrons ID, MiniIso 0.1 lepton scale factors" << std::endl;
+    // std::cout << "Be aware that Veto Electrons are not suited for selecting Electrons." << std::endl;
+    // std::cout << std::endl;
+
+    // std::cout << "Also loading the FullSim efficiency map" << std::endl;
+    // TFile * f_eff_full = new TFile("/mnt/t3nfs01/data01/shome/mschoene/CMSSW_7_4_12_pP/src/analysisCode/Utils/vetoeff_emu_etapt_lostlep.root" );
+    // if(!f_eff_full->IsOpen()) {std::cout<<" ERROR: Could not find muon Fullsim scale factor file" <<std::endl; return 0;}
+    // h_eff_full_mu = (TH2D*) f_eff_full->Get("h_mu_comb_eff");
+    // h_eff_full_el = (TH2D*) f_eff_full->Get("h_ele_comb_eff");
+    // if(!h_eff_full_mu || !h_eff_full_el ) {std::cout << " ERROR: Could not find the 2D histogram in your files " << std::endl; return 0;}
+    // h_eff_full_mu->SetDirectory(0);
+    // h_eff_full_el->SetDirectory(0);
+    // f_eff_full->Close();
+    // delete f_eff_full;

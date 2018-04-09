@@ -78,7 +78,8 @@ int preProcessing(std::string inputString,
   TH1D* newH=0;
   unsigned long int allHistoEntries=0;
   TH1D* newSumW=0;
-  unsigned long int allSumGenWeight=0;
+  long int allSumGenWeight=0;
+  //  unsigned long int allSumGenWeight=0;
   
   std::cout << "Entering loop over chain elements..." << std::endl;
   
@@ -94,8 +95,11 @@ int preProcessing(std::string inputString,
 
     TH1D *sumW = (TH1D*)f->Get("SumGenWeights");
     //
-    //std::cout << "Read SumGenWeights histogram for file "<< nFiles <<": " << sumW->GetEntries() << std::endl;
+    // std::cout << "Read SumGenWeights histogram for file "<< nFiles <<": " << sumW->GetEntries() << std::endl;
     //
+
+    //  std::cout << "sumW bin content = " << sumW->GetBinContent(1) << std::endl;
+
 
     if(isFirst){
       newH = (TH1D*) countH->Clone();
@@ -122,6 +126,7 @@ int preProcessing(std::string inputString,
   newSumW->SetBinContent(1,allSumGenWeight);
   
   std::cout << "Read gen weights and count histogram..." << std::endl;
+  std::cout << " allSumGenWeight = " << allSumGenWeight << std::endl;
 
 
   //-------------------------------------------------------------
@@ -165,8 +170,10 @@ int preProcessing(std::string inputString,
   
 
   //  float scale1fb = xsec*kfactor*1000*filter/(Float_t)nEventsHisto;
-  ULong64_t sumGenWeightsHisto; 
-  ULong64_t nEffEventsHisto; 
+  Long64_t sumGenWeightsHisto; 
+  //  ULong64_t sumGenWeightsHisto; 
+  Long64_t nEffEventsHisto; 
+  //  ULong64_t nEffEventsHisto; 
 
 
   float weight_toppt;
@@ -192,6 +199,7 @@ int preProcessing(std::string inputString,
   Int_t nisrMatch;
 
   Int_t GenSusyMNeutralino;
+  Int_t GenSusyMNeutralino2;
   Int_t GenSusyMGluino;
 
   bool isFastSim = 0;
@@ -199,6 +207,8 @@ int preProcessing(std::string inputString,
 
   if( (id>1000 && id<=2000 ) ){
     chain->SetBranchAddress("GenSusyMNeutralino", &GenSusyMNeutralino);
+
+    chain->SetBranchAddress("GenSusyMNeutralino2", &GenSusyMNeutralino2);
 
     if(  txtFileList.find("T2bb") != std::string::npos ){
       std::cout << "FOUND T2bb " << std::endl;  
@@ -216,7 +226,16 @@ int preProcessing(std::string inputString,
       std::cout << "FOUND T1* " << std::endl;  
       chain->SetBranchAddress("GenSusyMGluino", &GenSusyMGluino);
 
-    }	else std::cout << "Fuck" << std::endl;
+    }else if(  txtFileList.find("TChi") != std::string::npos ){
+      std::cout << "FOUND TChi* " << std::endl;  
+      chain->SetBranchAddress("GenSusyMNeutralino2", &GenSusyMGluino);
+      //chain->SetBranchAddress("GenSusyMGluino", &GenSusyMNeutralino2);
+    }
+    else if(  txtFileList.find("T2bH") != std::string::npos ){
+      std::cout << "FOUND T2bH " << std::endl;  
+      chain->SetBranchAddress("GenSusyMSbottom", &GenSusyMGluino);
+    }
+    else std::cout << "Fuck" << std::endl;
 
   }   
 
@@ -232,10 +251,18 @@ int preProcessing(std::string inputString,
  
 
 
- 
-  sumGenWeightsHisto = (ULong64_t) newSumW->GetBinContent(1);
-  nEffEventsHisto = ( (double) 1.0*sumGenWeightsHisto/genWeight_  > (ULong64_t) (1.0*sumGenWeightsHisto/genWeight_ + 0.5) ) ? (ULong64_t) (1.0*sumGenWeightsHisto/genWeight_ + 1.0) : (ULong64_t) (1.0*sumGenWeightsHisto/genWeight_);
-  
+  sumGenWeightsHisto = (Long64_t) newSumW->GetBinContent(1);
+  nEffEventsHisto = ( (double) 1.0*sumGenWeightsHisto/genWeight_  > (Long64_t) (1.0*sumGenWeightsHisto/genWeight_ + 0.5) ) ? (Long64_t) (1.0*sumGenWeightsHisto/genWeight_ + 1.0) : (Long64_t) (1.0*sumGenWeightsHisto/genWeight_);
+
+
+  // sumGenWeightsHisto = (ULong64_t) newSumW->GetBinContent(1);
+  // nEffEventsHisto = ( (double) 1.0*sumGenWeightsHisto/genWeight_  > (ULong64_t) (1.0*sumGenWeightsHisto/genWeight_ + 0.5) ) ? (ULong64_t) (1.0*sumGenWeightsHisto/genWeight_ + 1.0) : (ULong64_t) (1.0*sumGenWeightsHisto/genWeight_);
+
+  std::cout << "sumGenWeightsHisto = " << sumGenWeightsHisto<< std::endl;
+  std::cout << "nEffEventsHisto = " << nEffEventsHisto << std::endl;
+  std::cout << "genWeight_ = " << genWeight_  << std::endl;
+  //std::cout << " = " <<  << std::endl;
+
  
   if (nEventsHisto < nEventsTree) // this should not happen
     std::cout << "ERROR: histogram count has less events than tree. This indicates something went wrong" << std::endl
@@ -270,7 +297,7 @@ int preProcessing(std::string inputString,
   TH2F* h_btag_light_DN = new TH2F("h_btag_light_DN", "", nBins, min, max, nBins, -min, max-min); h_btag_light_DN->Sumw2();
 
   //For MC 
-  double isr_average = 0.;
+  long double isr_average = 0.;
   double weight_isr_av;
 
   double average = 0;
@@ -326,23 +353,45 @@ int preProcessing(std::string inputString,
 
     if( (id>=300 && id<=400) || (id>=1000  && id<=2000)  ){
       if( nisrMatch == 1 ){
-	weight_isr_av = 0.882;	    isr_err = 0.059;
+	weight_isr_av = 0.920;	    isr_err = 0.040;
       }else if( nisrMatch == 2 ){
-	weight_isr_av = 0.792;	    isr_err = 0.104;
+	weight_isr_av = 0.821;	    isr_err = 0.090;
       }else if( nisrMatch == 3 ){ 
-	weight_isr_av = 0.702;	    isr_err = 0.149;
+	weight_isr_av = 0.715;	    isr_err = 0.143;
       }else if( nisrMatch == 4 ){
-	weight_isr_av = 0.648;	    isr_err = 0.176;
+	weight_isr_av = 0.662;	    isr_err = 0.169;
       }else if( nisrMatch == 5 ){
-	weight_isr_av = 0.601;	    isr_err = 0.199;
+	weight_isr_av = 0.561;	    isr_err = 0.219;
       }else if( nisrMatch > 5 ){  
-	weight_isr_av = 0.515;	    isr_err = 0.242;
+	weight_isr_av = 0.511;	    isr_err = 0.244;
       }
+
+      // if( nisrMatch == 1 ){
+      // 	weight_isr_av = 0.882;	    isr_err = 0.059;
+      // }else if( nisrMatch == 2 ){
+      // 	weight_isr_av = 0.792;	    isr_err = 0.104;
+      // }else if( nisrMatch == 3 ){ 
+      // 	weight_isr_av = 0.702;	    isr_err = 0.149;
+      // }else if( nisrMatch == 4 ){
+      // 	weight_isr_av = 0.648;	    isr_err = 0.176;
+      // }else if( nisrMatch == 5 ){
+      // 	weight_isr_av = 0.601;	    isr_err = 0.199;
+      // }else if( nisrMatch > 5 ){  
+      // 	weight_isr_av = 0.515;	    isr_err = 0.242;
+      // }
+
     }
 
     if(id>10 && id<1000)
-      isr_average += weight_isr_av /(double) nEventsTree ;
+      isr_average += weight_isr_av;// /(double) nEventsTree ;
+    //isr_average += weight_isr_av /(double) nEventsTree ;
     else if( id>=1000  && id<=2000 ){
+
+      // if(id>=1500 && id <= 1510){
+      // 	GenSusyMGluino = GenSusyMNeutralino2;
+      // 	//	GenSusyMNeutralino =1.; automatically 1 for HZ/HH EW samples
+      // }
+
       h_isr->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino,  weight_isr_av);
 
       h_isr_UP->Fill((float)GenSusyMGluino , (float)GenSusyMNeutralino,  weight_isr_av + isr_err);
@@ -383,7 +432,7 @@ int preProcessing(std::string inputString,
 
 
   // average /= (double) nEventsTree;
-  //  isr_average /= (double) nEventsTree;
+  isr_average /= (long double) nEventsTree;
   h_isr->Divide(h_totalSumGenWeightsHisto);
   h_isr_UP->Divide(h_totalSumGenWeightsHisto);
   h_isr_DN->Divide(h_totalSumGenWeightsHisto);

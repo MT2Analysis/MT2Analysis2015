@@ -6,6 +6,7 @@
 # env -i X509_USER_PROXY=~/.x509up_u`id -u` gfal-ls gsiftp://storage01.lcg.cscs.ch/pnfs/lcg.cscs.ch/cms/trivcat/store/user/mschoene/crab
 
 # NB: Insert path starting from /store/user/... The rest will be added automatically
+
 #inputProductionFolder="/store/user/mschoene/crab/8_0_26/reMini2017_runC_Feb28"
 #inputProductionFolder="/store/user/mschoene/crab/8_0_26/reMini2017_runB_Feb28"
 #inputProductionFolder="/store/user/mschoene/crab/8_0_26/reMini2017_runD_Feb28"
@@ -13,18 +14,39 @@
 #inputProductionFolder="/store/user/mschoene/crab/8_0_26/reMini2017_runF_Feb28"
 #inputProductionFolder="/store/user/mschoene/crab/8_0_26/reMini2017_runG_Feb28"
 #inputProductionFolder="/store/user/mschoene/crab/8_0_26/reMini2017_runH_Feb28"
-
-inputProductionFolder="/store/user/mschoene/crab/8_0_26/MT2_gg_15Mar_CutBased15Id"
-
-
+#inputProductionFolder="/store/user/mschoene/crab/8_0_26/MT2_gg_15Mar_CutBased15Id"
+#inputProductionFolder="/store/user/mschoene/crab/8_0_26/MT2gg_22Mar_Signal"
+#inputProductionFolder="/store/user/mschoene/crab/8_0_26/MT2gg_29Mar_Signal_bugged/"
 #inputProductionFolder="/store/user/mschoene/crab/8_0_11/signal2017_Jan11/"
 #inputProductionFolder="/store/user/mschoene/crab/8_0_11/mc2016_Nov15"
+#inputProductionFolder="/store/user/mschoene/crab/8_0_26/gg_MC_Apr18/"
+#inputProductionFolder="/store/user/mschoene/crab/8_0_26/gg_data2016_Sep04/"
+#inputProductionFolder="/store/user/mschoene/crab/8_0_26/gg_Sig_May29/"
+
+#inputProductionFolder="/store/user/mschoene/crab/9_2_4/data2017_reReco_jan16"
+#inputProductionFolder="/store/user/mschoene/crab/9_2_4/data2017rR_jan21_newPhotonId/"
+#inputProductionFolder="/store/user/mschoene/crab/8_0_26/data2016_05Feb18_newId/"
+#inputProductionFolder="/store/user/mschoene/crab/9_4_1/data2017_05Feb18/"
+#inputProductionFolder="/store/user/mschoene/crab/8_0_26/mc2016_05Feb18_newId/"
+#inputProductionFolder="/store/user/mschoene/crab/9_4_1/mc2017_05Feb18"
+#inputProductionFolder="/store/user/mschoene/crab/9_4_1/sig2017_05Feb18"
+
+#inputProductionFolder="/store/user/mschoene/crab/8_0_26/sig2017_15Feb18/"
+
+#inputProductionFolder="/store/user/mschoene/crab/8_0_26/data2016_27Feb18_hgg"
+#inputProductionFolder="/store/user/mschoene/crab/8_0_26/sig2016_27Feb18_hgg"
+#inputProductionFolder="/store/user/mschoene/crab/8_0_26/mc2016_27Feb18_hgg"
+inputProductionFolder="/store/user/mschoene/crab/8_0_26/data2017_27Feb18_hgg"
+
+era=2017    #this will change the input file and the output folder location
 
 # In case you want to run the same production twice, adding a post-fix may help
 #postFix=""
-#postFix="_preProc_Jan11"
-postFix="_preProc_Mar20"
-#postFix="_postProc_Dec09"
+#postFix="_signal_pP_Apr19"
+#postFix="_VH_pP_Jun19"
+#postFix="_VH_pP_Test3Jun22"
+#postFix="_pPSep08_smaller"
+postFix="_pP_Mar01"
 
 # For reading input from T2 (default):
 site="lcg.cscs.ch"
@@ -34,19 +56,24 @@ se="storage01"
 #se="t3dcachedb03"
 
 # You should uncomment only one of the two, because data and MC production usually require different settings 
+listOfSamplesFile="postProcessing2017-Data.cfg"  #for data inputs
 #listOfSamplesFile="postProcessing2016-Data.cfg"  #for data inputs
-listOfSamplesFile="postProcessing2016-MC.cfg"   # for MC inputs
+#listOfSamplesFile="postProcessing2016-MC.cfg"   # for MC inputs
 
 isCrab=1
 inputPU="MyDataPileupHistogram.root"
-GoldenJSON="/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/ReReco/Final/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt"
+
+#GoldenJSON="/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/ReReco/Final/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt"
+GoldenJSON="/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/ReReco/Cert_294927-306462_13TeV_EOY2017ReReco_Collisions17_JSON.txt"
+
+
 #"$PWD/gold_runF.txt"  #produced, for example for runE, with: filterJSON.py --min=276831 --max=277420 --output=gold_runE.txt gold_json.txt
 
 ###CHANGE
-doSkimmingPruning=0 #1 as default; 0 for *_forQCD datasets (in data), which don't contain the necessary info to run the skimming and which are already pruned
-applyJSON=0     #0 for MC
+doSkimmingPruning=1 #1 as default; 0 for *_forQCD datasets (in data), which don't contain the necessary info to run the skimming and which are already pruned
+applyJSON=1     #0 for MC
 doFilterTxt=0   #0 for MC
-doAllSF=1       #1 for MC
+doAllSF=0       #1 for MC
 doPreProc=1     #0 (only 1 for large MC samples (almost all of them now!) or if you want to split MC samples, then run ./doTreeProduction pre first)
 
 
@@ -92,7 +119,7 @@ inputFolder="/pnfs/"$site"/cms/trivcat"$inputProductionFolder
 
 productionName="$(basename $inputFolder)$postFix" 
 
-outputFolder="/pnfs/psi.ch/cms/trivcat/store/user/`whoami`/MT2production/80X/PostProcessed/"$productionName"/"
+outputFolder="/pnfs/psi.ch/cms/trivcat/store/user/`whoami`/MT2production/"$era"/PostProcessed/"$productionName"/"
 
 
 
@@ -224,6 +251,41 @@ if [[ "$1" = "pre" ]]; then
 
 	numFiles=$(wc -l $fileList | awk '{print $1}')
 	echo "number of files = " $numFiles
+    
+        ###Seriously, the logic here could be improved
+        ###And now for the SECOND extensions if they exist	
+	crabExt=""
+	if [ ${isCrab} = 1 ]; then
+	#crabExt=$(ls $inputFolder/$name/)
+	    echo "input to xrdfs: " xrdfs $host ls $inputFolder/${name}_ext2/
+	    echo $(xrdfs $host ls $inputFolder/${name}_ext2/)
+	    crabExt=$(xrdfs $host ls $inputFolder/${name}_ext2/)
+	fi;
+	echo "crabExt: " $crabExt;
+
+	
+	if [ ${isCrab} = 1 ]; then
+	    for ((i=0; i<10; i++)); do  #BM: where this 10 is coming from ?? 
+		xrdfs $host ls $crabExt/000${i}/ &> /dev/null;
+		remoteDirectoryExist=`echo $?`
+		if [ "$remoteDirectoryExist" -eq "0" ]; then
+		    remoteFiles=`xrdfs $host ls $crabExt/000${i}/ |grep mt2`
+		    for f in $remoteFiles; do
+			echo $f>>$fileList
+		    done;
+		else
+		    break;
+		fi;
+	    done;
+	else
+	    for f in $inputFolder/$name/mt2*.root; do
+		echo $f>>$fileList
+	    done;
+	fi;
+
+	numFiles=$(wc -l $fileList | awk '{print $1}')
+	echo "number of files = " $numFiles
+
 
 
 	if [ "$site" == "psi.ch" ]; then
@@ -285,8 +347,8 @@ EOF
 
 ###qsub  -q short.q -l h_vmem=5g batchScript_${name}.sh;
 
-	qsub -q long.q -l h_vmem=5g $scriptName; 
-#	qsub -q all.q $scriptName;
+#	qsub -q long.q -l h_vmem=5g $scriptName; 
+	qsub -q all.q $scriptName;
 	rm $scriptName;
 	
     done < $listOfSamplesFile
@@ -331,9 +393,13 @@ else
     mkdir  $jobsLogsFolder
 fi
 
-
+#gfalProtocol="gsiftp" # if useXRD disabled, use gfal via the given protocol
 semkdir ${gfalProtocol}://t3se01.psi.ch/$outputFolder
-python $PWD/convertGoodRunsList_JSON.py $GoldenJSON >& $jobsLogsFolder/goodruns_golden.txt
+python $PWD/convertGoodRunsList_JSON.py $GoldenJSON >& goodruns_golden.txt
+#python $PWD/convertGoodRunsList_JSON.py $GoldenJSON >& $jobsLogsFolder/goodruns_golden.txt
+
+echo $outputFolder
+xrdfs t3dcachedb03.psi.ch cp $GoldenJSON $outputFolder/
 secp file://$GoldenJSON ${gfalProtocol}://t3se01.psi.ch/$outputFolder/
 
 if [ $doSilver -eq 1 ]; then
@@ -408,7 +474,7 @@ do
     fi;
 
     if [ ${isCrab} = 1 ]; then
-	for ((i=0; i<10; i++)); do  #BM: where this 10 is coming from ?? 
+	for ((i=0; i<10; i++)); do  #BM: where this 10 is coming from ?? laziness
 	    #if [ -d $inputFolder/${name}/$crabExt/000${i}/ ]; then
 	    xrdfs $host ls $crabExt/000${i}/ &> /dev/null;
 	    remoteDirectoryExist=`echo $?`
@@ -464,9 +530,49 @@ do
     numFiles=$(wc -l $fileList | awk '{print $1}')
     echo "number of files = " $numFiles
 
-    maxNfiles=1000
+    ###For the second extentions if they exist, logic to be improved..
+    ###And now for the SECOND extensions if they exist########################
+    # crabExt=""
+    # if [ ${isCrab} = 1 ]; then
+    # 	echo "input to xrdfs: " xrdfs $host ls $inputFolder/${name}_ext2/
+    # 	crabExt=$(xrdfs $host ls $inputFolder/${name}_ext2/)
+    # fi;
+    # echo "crabExt: " $crabExt;
+
+    
+    if [ ${isCrab} = 1 ]; then
+	for ((i=0; i<10; i++)); do  #BM: where this 10 is coming from ?? 
+	    xrdfs $host ls $crabExt/000${i}/ &> /dev/null;
+	    remoteDirectoryExist=`echo $?`
+	    if [ "$remoteDirectoryExist" -eq "0" ]; then
+		remoteFiles=`xrdfs $host ls $crabExt/000${i}/ |grep mt2`
+		for f in $remoteFiles; do
+		    echo $f>>$fileList
+		done;
+	    else
+		break;
+	    fi;
+	done;
+    else
+	for f in $inputFolder/$name/mt2*.root; do
+	    echo $f>>$fileList
+	done;
+    fi;
+
+
+    #numFiles=$(wc -l inputChunkList.txt | awk '{print $1}')
+    numFiles=$(wc -l $fileList | awk '{print $1}')
+    echo "number of files = " $numFiles
+
+    maxNfiles=200
     counter=-1
     preProcFile=""
+    if [[ $doPreProc ]]
+    then    
+	preProcFile=${name}_pre;
+	echo $preProcFile
+	echo "YOU SHOULD NOT BE HERE FFS" 
+    fi
 
     if [[ (( $doPreProc -eq 1 && (( $numFiles -gt $maxNfiles )) ))  || (( $id -lt 10 )) ]]; then
    	echo "File will be split into multiple files for speed and memory limit purposes"
@@ -477,6 +583,12 @@ do
 	fi;
     fi;
     
+    if [[ $doPreProc ]]
+    then    
+#	preProcFile=${name}_pre;
+	echo $preProcFile
+	echo "this better has the pre proc file name above" 
+    fi
 
     while (( (( (( $numFiles  )) > (($counter * $maxNfiles)) )) || $(($counter < 0 )) )); do 
 
@@ -595,19 +707,20 @@ skimmingPruningCfg="${workingFolder}/skimmingPruning_${counterName}.cfg"
 ./runSkimmingPruning.sh \$skimmingPruningCfg
 rm \$skimmingPruningCfg
 
-#qcd skim
-skimmingPruningCfgQCD="${workingFolder}/skimmingPruningQCD_${counterName}.cfg"
-    cat skimmingPruningQCD.cfg |grep -v \# | sed  "s#INPUTDIR#${outputFolder}#" |sed "s#INPUTFILTER#${counterName}_#" \
-	| sed "s#OUTPUTDIR#${outputFolder}/QCDskimAndPrune#" | sed "s#DOPRUNING#${doPruning}#" > \$skimmingPruningCfgQCD
-./runSkimmingPruning.sh \$skimmingPruningCfgQCD
-rm \$skimmingPruningCfgQCD
+# #qcd skim
+# skimmingPruningCfgQCD="${workingFolder}/skimmingPruningQCD_${counterName}.cfg"
+#     cat skimmingPruningQCD.cfg |grep -v \# | sed  "s#INPUTDIR#${outputFolder}#" |sed "s#INPUTFILTER#${counterName}_#" \
+# 	| sed "s#OUTPUTDIR#${outputFolder}/QCDskimAndPrune#" | sed "s#DOPRUNING#${doPruning}#" > \$skimmingPruningCfgQCD
+# ./runSkimmingPruning.sh \$skimmingPruningCfgQCD
+# rm \$skimmingPruningCfgQCD
 
-#qcd skim for monojet
-skimmingPruningCfgMonoJet="${workingFolder}/skimmingPruningMonoJet_${counterName}.cfg"
-    cat skimmingPruningMonoJet.cfg |grep -v \# | sed  "s#INPUTDIR#${outputFolder}#" |sed "s#INPUTFILTER#${counterName}_#" \
-	| sed "s#OUTPUTDIR#${outputFolder}/QCDMonoJetSkimAndPrune#" | sed "s#DOPRUNING#${doPruning}#" > \$skimmingPruningCfgMonoJet
-./runSkimmingPruning.sh \$skimmingPruningCfgMonoJet
-rm \$skimmingPruningCfgMonoJet
+# #qcd skim for monojet
+# skimmingPruningCfgMonoJet="${workingFolder}/skimmingPruningMonoJet_${counterName}.cfg"
+#     cat skimmingPruningMonoJet.cfg |grep -v \# | sed  "s#INPUTDIR#${outputFolder}#" |sed "s#INPUTFILTER#${counterName}_#" \
+# 	| sed "s#OUTPUTDIR#${outputFolder}/QCDMonoJetSkimAndPrune#" | sed "s#DOPRUNING#${doPruning}#" > \$skimmingPruningCfgMonoJet
+# ./runSkimmingPruning.sh \$skimmingPruningCfgMonoJet
+# rm \$skimmingPruningCfgMonoJet
+
 else
  echo "skipping skimming/pruning steps"
 fi;
@@ -621,7 +734,8 @@ EOF
         #if you have a big file and no time to change the code to be smoother: qsub  -q short.q -l h_vmem=5g batchScript_${name}.sh;
 
 	qsub -q all.q $scriptName;
-##	qsub -q short.q $scriptName;
+#	qsub -q short.q  $scriptName;
+#	qsub -q short.q   -l h_vmem=5g $scriptName;
 	rm $scriptName;
 
 	if (($counter < 0)); then

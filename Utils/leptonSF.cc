@@ -107,8 +107,8 @@ lepSF getLepSF( float pt, float eta, int pdgId){
     return weights;
   }
 
-  Float_t uncert = 1; //Place holder for total uncertainty
-  Float_t central = 1; 
+  Float_t uncert_ = 1; //Place holder for total uncertainty
+  Float_t central_ = 1; 
   Float_t err = 0;
   Float_t uncert_UP = 0; 	Float_t uncert_DN = 0; 
       
@@ -118,49 +118,49 @@ lepSF getLepSF( float pt, float eta, int pdgId){
   if( pdgId == 11) {
     Int_t binx = h_elSF->GetXaxis()->FindBin(pt_cutoff);
     Int_t biny = h_elSF->GetYaxis()->FindBin(eta);
-    central = h_elSF->GetBinContent(binx,biny);
+    central_ = h_elSF->GetBinContent(binx,biny);
     err  = h_elSF->GetBinError(binx,biny);
 	  
     int binx_trk = h_elSF_trk->GetXaxis()->FindBin(eta);
     int biny_trk = 1; // hardcoding for now - only one bin in pt (hist starts at 20)
-    central *= h_elSF_trk->GetBinContent(binx_trk,biny_trk);
+    central_ *= h_elSF_trk->GetBinContent(binx_trk,biny_trk);
     float trk_err = h_elSF_trk->GetBinError(binx_trk,biny_trk);
     if (pt_cutoff < 20. || pt_cutoff > 80.) err = sqrt(err*err + trk_err*trk_err + 0.01*0.01); 
     else err = sqrt(err*err + trk_err*trk_err);
 	  
-    if (central > 1.3 || central < 0.3) 
-      std::cout<<"STRANGE: Electron with pT/eta of "<< pt <<"/"<< eta <<". SF is "<< central <<std::endl;
-    uncert_UP = central + err;
-    uncert_DN = central - err;
+    if (central_ > 1.3 || central_ < 0.3) 
+      std::cout<<"STRANGE: Electron with pT/eta of "<< pt <<"/"<< eta <<". SF is "<< central_ <<std::endl;
+    uncert_UP = central_ + err;
+    uncert_DN = central_ - err;
 	  	  
   } //else Muons
   else if( pdgId == 13) {
     Int_t binx = h_muSF->GetXaxis()->FindBin(pt_cutoff);
     Int_t biny = h_muSF->GetYaxis()->FindBin(fabs(eta));
 	  
-    //	  float central_trk = 1;
+    //	  float central__trk = 1;
     //	  Int_t binx_trk = h_muTrk_hi->GetXaxis()->FindBin(  lep_eta[o] );
     //	  if( binx_trk>10 ) binx_trk = 10;
     //	  else if( binx_trk<1 ) binx_trk = 1;
-    //	  central_trk = h_muTrk_hi->GetBinContent( binx_trk );
+    //	  central__trk = h_muTrk_hi->GetBinContent( binx_trk );
     //	  
     //	  
     //	  if ( binx >7 ) binx = 7; //overflow bin empty for the muons...
-    //	  central = h_muSF->GetBinContent(binx,biny);
+    //	  central_ = h_muSF->GetBinContent(binx,biny);
     //	  
-    //	  central *= central_trk;
+    //	  central_ *= central__trk;
 	  
 
-    central = h_muSF->GetBinContent(binx,biny);
+    central_ = h_muSF->GetBinContent(binx,biny);
     err  = 0.03; //current recomendation is 3% //   err  = 0.014; // adding in quadrature 1% unc. on ID and 1% unc. on ISO
-    if (central > 1.2 || central < 0.8) 
-      std::cout<<"STRANGE: Muon with pT/eta of "<<pt<<"/"<< fabs(eta) <<". SF is "<< central <<std::endl;
-    uncert_UP = central + err;
-    uncert_DN = central - err;
+    if (central_ > 1.2 || central_ < 0.8) 
+      std::cout<<"STRANGE: Muon with pT/eta of "<<pt<<"/"<< fabs(eta) <<". SF is "<< central_ <<std::endl;
+    uncert_UP = central_ + err;
+    uncert_DN = central_ - err;
 	  
   }//done with one  electron/muon 
 
-  weights.sf = central;
+  weights.sf = central_;
   weights.up = uncert_UP;
   weights.dn = uncert_DN;
 
@@ -185,10 +185,10 @@ lepSF getVetoEffLepSF( float pt, float eta, int pdgId){
   }
 
 	
-  float central=1.;
+  float central_=1.;
   float err=0;
-  float uncert=0;
-  float fast_central=1.;
+  float uncert_=0;
+  float fast_central_=1.;
   float fast_err=0.;
   float uncert_fast=0;
 	
@@ -200,8 +200,8 @@ lepSF getVetoEffLepSF( float pt, float eta, int pdgId){
   if ( abs( pdgId ) == 11) { 
     Int_t binx = h_elSF->GetXaxis()->FindBin(pt_cutoff);
     Int_t biny = h_elSF->GetYaxis()->FindBin( fabs(eta) );
-    central = h_elSF->GetBinContent(binx,biny);
-    uncert  = h_elSF->GetBinError(binx,biny);
+    central_ = h_elSF->GetBinContent(binx,biny);
+    uncert_  = h_elSF->GetBinError(binx,biny);
 	  
     Int_t binx_eff = h_eff_full_el->GetXaxis()->FindBin(pt_cutoff_eff);
     Int_t biny_eff = h_eff_full_el->GetYaxis()->FindBin( fabs(eta) );
@@ -210,34 +210,34 @@ lepSF getVetoEffLepSF( float pt, float eta, int pdgId){
   } else if( abs( pdgId ) == 13) {
     Int_t binx = h_muSF->GetXaxis()->FindBin(pt_cutoff);
     Int_t biny = h_muSF->GetYaxis()->FindBin( fabs(eta) );
-    central = h_muSF->GetBinContent(binx,biny);
-    uncert = 0.03;// uncert  = 0.014;   // adding in quadrature 1% unc. on ID and 1% unc. on ISO
+    central_ = h_muSF->GetBinContent(binx,biny);
+    uncert_ = 0.03;// uncert_  = 0.014;   // adding in quadrature 1% unc. on ID and 1% unc. on ISO
 	  
-    //	  float central_trk = 1;
+    //	  float central__trk = 1;
     //	  if( pt >= 10.){
     //	    Int_t binx_trk = h_muTrk_hi->GetXaxis()->FindBin(  lep_eta[o] );
     //	    if( binx_trk>10 ) binx_trk = 10;
     //	    else if( binx_trk<1 ) binx_trk = 1;
-    //	    central_trk = h_muTrk_hi->GetBinContent( binx_trk );
+    //	    central__trk = h_muTrk_hi->GetBinContent( binx_trk );
     //	  }else if( pt < 10 ){
     //	    Int_t binx_trk = h_muTrk_lo->GetXaxis()->FindBin(  lep_eta[o] );
     //	    if( binx_trk>10 ) binx_trk = 10;
     //	    else if( binx_trk<1 ) binx_trk = 1;
-    //	    central_trk = h_muTrk_lo->GetBinContent( binx_trk );
+    //	    central__trk = h_muTrk_lo->GetBinContent( binx_trk );
     //	  }
-    //	  central *= central_trk;
+    //	  central_ *= central__trk;
 	  
     Int_t binx_eff = h_eff_full_mu->GetXaxis()->FindBin( pt_cutoff_eff );
     Int_t biny_eff = h_eff_full_mu->GetYaxis()->FindBin( fabs(eta) );
     veto_eff = h_eff_full_mu->GetBinContent(binx_eff,biny_eff);
   }
 	
-  //Only full sim correction, only uncertainty, not weight
+  //Only full sim correction, only uncert_ainty, not weight
 	    
-  float sf = central;
+  //  float sf_ = central_;
   // float veto_eff_corr = veto_eff* sf; //corrected veto eff with the 
 	
-  float unc = uncert;
+  float unc = uncert_;
   float veto_eff_unc_UP = veto_eff* (1. + unc);
 	
   float unc_UP_0l = (( 1. - veto_eff_unc_UP) / (1. - veto_eff))  -1.;
@@ -245,7 +245,7 @@ lepSF getVetoEffLepSF( float pt, float eta, int pdgId){
   // weight_lepsf_0l_DN *= ( 1. - unc_UP_0l);
 
 
-  weights.sf = central;
+  weights.sf = central_;
   weights.up = ( 1. + unc_UP_0l);
   weights.dn = ( 1. - unc_UP_0l);
 
@@ -273,12 +273,12 @@ lepSF getLepSF_fast( float pt, float eta, int pdgId){
     return weights;
   }
 
-  Float_t uncert = 1; //Place holder for total uncertainty
-  Float_t central = 1; 
+  Float_t uncert_ = 1; //Place holder for total uncertainty
+  Float_t central_ = 1; 
   Float_t err = 0;
   Float_t uncert_UP = 0; 	Float_t uncert_DN = 0; 
      
-  Float_t fast_central = 1; 
+  Float_t fast_central_ = 1; 
   Float_t fast_err = 0;
 
 
@@ -289,33 +289,33 @@ lepSF getLepSF_fast( float pt, float eta, int pdgId){
  
    // Int_t binx = h_elSF->GetXaxis()->FindBin(pt_cutoff);
    //  Int_t biny = h_elSF->GetYaxis()->FindBin(eta);
-   //  central = h_elSF->GetBinContent(binx,biny);
+   //  central_ = h_elSF->GetBinContent(binx,biny);
    //  err  = h_elSF->GetBinError(binx,biny);
 	  
    //  int binx_trk = h_elSF_trk->GetXaxis()->FindBin(eta);
    //  int biny_trk = 1; // hardcoding for now - only one bin in pt (hist starts at 20)
-   //  central *= h_elSF_trk->GetBinContent(binx_trk,biny_trk);
+   //  central_ *= h_elSF_trk->GetBinContent(binx_trk,biny_trk);
    //  float trk_err = h_elSF_trk->GetBinError(binx_trk,biny_trk);
    //  if (pt_cutoff < 20. || pt_cutoff > 80.) err = sqrt(err*err + trk_err*trk_err + 0.01*0.01); 
    //  else err = sqrt(err*err + trk_err*trk_err);
 	  
-   //  if (central > 1.3 || central < 0.3) 
-   //    std::cout<<"STRANGE: Electron with pT/eta of "<< pt <<"/"<< eta <<". SF is "<< central <<std::endl;
-   //  uncert_UP = central + err;
-   //  uncert_DN = central - err;
+   //  if (central_ > 1.3 || central_ < 0.3) 
+   //    std::cout<<"STRANGE: Electron with pT/eta of "<< pt <<"/"<< eta <<". SF is "<< central_ <<std::endl;
+   //  uncert_UP = central_ + err;
+   //  uncert_DN = central_ - err;
 	  
     Int_t fast_binx = h_fast_elSF->GetXaxis()->FindBin(pt_cutoff);
     Int_t fast_biny = h_fast_elSF->GetYaxis()->FindBin(eta);
-    fast_central = h_fast_elSF->GetBinContent(fast_binx,fast_biny);
+    fast_central_ = h_fast_elSF->GetBinContent(fast_binx,fast_biny);
     fast_err = h_fast_elSF->GetBinError(fast_binx,fast_biny);
     fast_err = sqrt(fast_err*fast_err + 0.05*0.05); // 5% systematic uncertainty
 
-    if( fast_central > 1.3 || fast_central < 0.7 )
-      std::cout << "Strange FastSim Electron with pT/eta of" << pt <<"/"<< eta <<". SF is "<< fast_central <<std::endl;
+    if( fast_central_ > 1.3 || fast_central_ < 0.7 )
+      std::cout << "Strange FastSim Electron with pT/eta of" << pt <<"/"<< eta <<". SF is "<< fast_central_ <<std::endl;
 
-    central   = fast_central;
-    uncert_UP = ( fast_central + fast_err );
-    uncert_DN = ( fast_central - fast_err );
+    central_   = fast_central_;
+    uncert_UP = ( fast_central_ + fast_err );
+    uncert_DN = ( fast_central_ - fast_err );
     // uncert_UP += fast_err ;
     //uncert_DN -= fast_err ;
 
@@ -327,49 +327,49 @@ lepSF getLepSF_fast( float pt, float eta, int pdgId){
     // Int_t binx = h_muSF->GetXaxis()->FindBin(pt_cutoff);
     // Int_t biny = h_muSF->GetYaxis()->FindBin(fabs(eta));
 	  
-    // //	  float central_trk = 1;
+    // //	  float central__trk = 1;
     // //	  Int_t binx_trk = h_muTrk_hi->GetXaxis()->FindBin(  lep_eta[o] );
     // //	  if( binx_trk>10 ) binx_trk = 10;
     // //	  else if( binx_trk<1 ) binx_trk = 1;
-    // //	  central_trk = h_muTrk_hi->GetBinContent( binx_trk );
+    // //	  central__trk = h_muTrk_hi->GetBinContent( binx_trk );
     // //	  
     // //	  
     // //	  if ( binx >7 ) binx = 7; //overflow bin empty for the muons...
-    // //	  central = h_muSF->GetBinContent(binx,biny);
+    // //	  central_ = h_muSF->GetBinContent(binx,biny);
     // //	  
-    // //	  central *= central_trk;
+    // //	  central_ *= central__trk;
 	  
 
-    // central = h_muSF->GetBinContent(binx,biny);
+    // central_ = h_muSF->GetBinContent(binx,biny);
     // err  = 0.03; //current recomendation is 3% //   err  = 0.014; // adding in quadrature 1% unc. on ID and 1% unc. on ISO
-    // if (central > 1.2 || central < 0.8) 
-    //   std::cout<<"STRANGE: Muon with pT/eta of "<<pt<<"/"<< fabs(eta) <<". SF is "<< central <<std::endl;
-    // uncert_UP = central + err;
-    // uncert_DN = central - err;
+    // if (central_ > 1.2 || central_ < 0.8) 
+    //   std::cout<<"STRANGE: Muon with pT/eta of "<<pt<<"/"<< fabs(eta) <<". SF is "<< central_ <<std::endl;
+    // uncert_UP = central_ + err;
+    // uncert_DN = central_ - err;
 	  
     Int_t fast_binx = h_fast_muSF->GetXaxis()->FindBin(pt);
     Int_t fast_biny = h_fast_muSF->GetYaxis()->FindBin(fabs(eta));
-    fast_central = h_fast_muSF->GetBinContent(fast_binx,fast_biny);
+    fast_central_ = h_fast_muSF->GetBinContent(fast_binx,fast_biny);
     fast_err  = h_fast_muSF->GetBinError(fast_binx,fast_biny);
     if( pt < 20)
       fast_err= sqrt(fast_err*fast_err+ 0.03*0.03); // 3% systematic uncertainty
     else
       fast_err= sqrt(fast_err*fast_err+ 0.01*0.01); // 1% systematic uncertainty
 
-    if( fast_central > 1.3 || fast_central < 0.7 )
-      std::cout << "Strange FastSim Muon with pT/eta of" <<pt<<"/"<<eta<<". SF is "<< fast_central <<std::endl;
+    if( fast_central_ > 1.3 || fast_central_ < 0.7 )
+      std::cout << "Strange FastSim Muon with pT/eta of" <<pt<<"/"<<eta<<". SF is "<< fast_central_ <<std::endl;
 
-    central   = fast_central;
+    central_   = fast_central_;
 
-    uncert_UP = ( fast_central + fast_err );
-    uncert_DN = ( fast_central - fast_err );
+    uncert_UP = ( fast_central_ + fast_err );
+    uncert_DN = ( fast_central_ - fast_err );
 
     //uncert_UP += fast_err ;
     //uncert_DN -= fast_err ;
 
   }//done with one  electron/muon 
 
-  weights.sf = central;
+  weights.sf = central_;
   weights.up = uncert_UP;
   weights.dn = uncert_DN;
 
