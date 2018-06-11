@@ -42,11 +42,16 @@ public :
    Int_t         HLT_PFHT350_PFMET100;
    Int_t         HLT_PFHT300_PFMET100;
    Int_t         HLT_PFHT300_PFMET110;
+   Int_t         HLT_PFHT500_PFMET100_PFMHT100;
+   Int_t         HLT_PFHT800_PFMET75_PFMHT75;
    Int_t         HLT_PFMET90_PFMHT90;
    Int_t         HLT_PFMET100_PFMHT100;
    Int_t         HLT_PFMET120_PFMHT120;
    Int_t         HLT_PFMETNoMu90_PFMHTNoMu90;
    Int_t         HLT_PFMETNoMu120_PFMHTNoMu120;
+   Int_t         HLT_PFMETNoMu140_PFMHTNoMu140;
+   Int_t         HLT_PFMET120_PFMHT120_PFHT60;
+   Int_t         HLT_PFMETNoMu120_PFMHTNoMu120_PFHT60;
    Int_t         HLT_PFHT125_Prescale;
    Int_t         HLT_PFHT200_Prescale;
    Int_t         HLT_PFHT475_Prescale;
@@ -61,6 +66,7 @@ public :
    Int_t         HLT_PFHT800;
    Int_t         HLT_Photon155;
    Int_t         HLT_PFHT900;
+   Int_t         HLT_PFHT1050;
    Int_t         HLT_PFJet450;
    Int_t         HLT_Photon175;
    Int_t         HLT_MuEG;
@@ -521,8 +527,13 @@ public :
    TBranch        *b_HLT_PFHT350_PFMET100;   //!
    TBranch        *b_HLT_PFHT300_PFMET100;   //!
    TBranch        *b_HLT_PFHT300_PFMET110;   //!
+   TBranch        *b_HLT_PFHT500_PFMET100_PFMHT100;   //!
+   TBranch        *b_HLT_PFHT800_PFMET75_PFMHT75;   //!
    TBranch        *b_HLT_PFMETNoMu90_PFMHTNoMu90;   //!
    TBranch        *b_HLT_PFMETNoMu120_PFMHTNoMu120;   //!
+   TBranch        *b_HLT_PFMETNoMu140_PFMHTNoMu140;   //!
+   TBranch        *b_HLT_PFMET120_PFMHT120_PFHT60;   //!
+   TBranch        *b_HLT_PFMETNoMu120_PFMHTNoMu120_PFHT60;   //!
    TBranch        *b_HLT_PFMET90_PFMHT90;   //!
    TBranch        *b_HLT_PFMET100_PFMHT100;   //!
    TBranch        *b_HLT_PFMET120_PFMHT120;   //!
@@ -540,6 +551,7 @@ public :
    TBranch        *b_HLT_PFHT800;   //!
    TBranch        *b_HLT_Photon155;   //!
    TBranch        *b_HLT_PFHT900;   //!
+   TBranch        *b_HLT_PFHT1050;   //!
    TBranch        *b_HLT_PFJet450;   //!
    TBranch        *b_HLT_Photon175;   //!
    TBranch        *b_HLT_DiJet;   //!
@@ -1072,8 +1084,13 @@ void MT2Tree::Init(TTree *tree)
    fChain->SetBranchAddress("HLT_PFHT350_PFMET100", &HLT_PFHT350_PFMET100, &b_HLT_PFHT350_PFMET100);
    fChain->SetBranchAddress("HLT_PFHT300_PFMET100", &HLT_PFHT300_PFMET100, &b_HLT_PFHT300_PFMET100);
    fChain->SetBranchAddress("HLT_PFHT300_PFMET110", &HLT_PFHT300_PFMET110, &b_HLT_PFHT300_PFMET110);
+   fChain->SetBranchAddress("HLT_PFHT500_PFMET100_PFMHT100", &HLT_PFHT500_PFMET100_PFMHT100, &b_HLT_PFHT500_PFMET100_PFMHT100);
+   fChain->SetBranchAddress("HLT_PFHT800_PFMET75_PFMHT75", &HLT_PFHT800_PFMET75_PFMHT75, &b_HLT_PFHT800_PFMET75_PFMHT75);
    fChain->SetBranchAddress("HLT_PFMETNoMu90_PFMHTNoMu90", &HLT_PFMETNoMu90_PFMHTNoMu90, &b_HLT_PFMETNoMu90_PFMHTNoMu90);
    fChain->SetBranchAddress("HLT_PFMETNoMu120_PFMHTNoMu120", &HLT_PFMETNoMu120_PFMHTNoMu120, &b_HLT_PFMETNoMu120_PFMHTNoMu120);
+   fChain->SetBranchAddress("HLT_PFMETNoMu140_PFMHTNoMu140", &HLT_PFMETNoMu140_PFMHTNoMu140, &b_HLT_PFMETNoMu140_PFMHTNoMu140);
+   fChain->SetBranchAddress("HLT_PFMET120_PFMHT120_PFHT60", &HLT_PFMET120_PFMHT120_PFHT60, &b_HLT_PFMET120_PFMHT120_PFHT60);
+   fChain->SetBranchAddress("HLT_PFMETNoMu120_PFMHTNoMu120_PFHT60_PFHT60", &HLT_PFMETNoMu120_PFMHTNoMu120_PFHT60, &b_HLT_PFMETNoMu120_PFMHTNoMu120_PFHT60);
    fChain->SetBranchAddress("HLT_PFMET90_PFMHT90", &HLT_PFMET90_PFMHT90, &b_HLT_PFMET90_PFMHT90);
    fChain->SetBranchAddress("HLT_PFMET100_PFMHT100", &HLT_PFMET100_PFMHT100, &b_HLT_PFMET100_PFMHT100);
    fChain->SetBranchAddress("HLT_PFMET120_PFMHT120", &HLT_PFMET120_PFMHT120, &b_HLT_PFMET120_PFMHT120);
@@ -1091,6 +1108,7 @@ void MT2Tree::Init(TTree *tree)
    fChain->SetBranchAddress("HLT_PFHT800", &HLT_PFHT800, &b_HLT_PFHT800);
    fChain->SetBranchAddress("HLT_Photon155", &HLT_Photon155, &b_HLT_Photon155);
    fChain->SetBranchAddress("HLT_PFHT900", &HLT_PFHT900, &b_HLT_PFHT900);
+   fChain->SetBranchAddress("HLT_PFHT1050", &HLT_PFHT1050, &b_HLT_PFHT1050);
    fChain->SetBranchAddress("HLT_PFJet450", &HLT_PFJet450, &b_HLT_PFJet450);
    fChain->SetBranchAddress("HLT_Photon175", &HLT_Photon175, &b_HLT_Photon175);
    fChain->SetBranchAddress("HLT_DiJet", &HLT_DiJet, &b_HLT_DiJet);
