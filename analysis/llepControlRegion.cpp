@@ -32,7 +32,7 @@
 
 
 
-int round(float d) {
+int roundD(float d) {
   return (int)(floor(d + 0.5));
 }
 
@@ -653,7 +653,7 @@ void roundLikeData( MT2Analysis<MT2EstimateTree>* data ) {
      for( int iBin=1; iBin<thisYield->GetNbinsX()+1; ++iBin ) {
 
        float yield = thisYield->GetBinContent(iBin);
-       thisYield->SetBinContent(iBin, round( yield ));
+       thisYield->SetBinContent(iBin, roundD(yield));
        thisYield->SetBinError(iBin, 0. );
        
      } // for bins
