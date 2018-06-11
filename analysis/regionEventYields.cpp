@@ -518,7 +518,8 @@ MT2Analysis<T>* computeYield( const MT2Sample& sample, const MT2Config& cfg, std
 
     if (myTree.isData) {
 
-      if ( !(myTree.HLT_PFMET120_PFMHT120 || myTree.HLT_PFHT900 || myTree.HLT_PFHT300_PFMET110 || myTree.HLT_PFJet450 || myTree.HLT_PFMETNoMu120_PFMHTNoMu120 ) ) continue;
+      // MG 2016 expression if ( !(myTree.HLT_PFMET120_PFMHT120 || myTree.HLT_PFHT900 || myTree.HLT_PFHT300_PFMET110 || myTree.HLT_PFJet450 || myTree.HLT_PFMETNoMu120_PFMHTNoMu120 ) ) continue;
+      if ( !(myTree.HLT_PFMET120_PFMHT120 || myTree.HLT_PFHT1050 || myTree.HLT_PFHT500_PFMET100_PFMHT100 || myTree.HLT_PFJet500 || myTree.HLT_PFMETNoMu120_PFMHTNoMu120 || myTree.HLT_PFMETNoMu120_PFMHTNoMu120_PFHT60 ) ) continue;
       //      if ( !(myTree.HLT_PFMET100_PFMHT100 || myTree.HLT_PFHT800 || myTree.HLT_PFHT300_PFMET100) ) continue;
 
     } // if is data

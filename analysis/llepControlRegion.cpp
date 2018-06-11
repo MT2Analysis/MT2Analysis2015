@@ -105,7 +105,7 @@ int main( int argc, char* argv[] ) {
     }
     
     MT2Analysis<MT2EstimateTree>* llepCR = new MT2Analysis<MT2EstimateTree> ( "llepCR", regionsSet );  
-        
+      
     for( unsigned i=0; i < fSamples.size(); ++i )
       computeYield( fSamples[i], cfg, llepCR );
     
@@ -257,6 +257,7 @@ void computeYield( const MT2Sample& sample, const MT2Config& cfg, MT2Analysis<MT
     float ht   = (njets>1) ? myTree.ht : myTree.jet1_pt;
     //    float met  = myTree.met_pt;
     float mt2  = (njets>1) ? myTree.mt2 : ht;
+    std::cout << mt2 << std::endl;
     float minMTBmet = myTree.minMTBMet;
     
     //    int nMuons10 = myTree.nMuons10;
@@ -290,7 +291,10 @@ void computeYield( const MT2Sample& sample, const MT2Config& cfg, MT2Analysis<MT
 
     if (myTree.isData) {
 
-      if ( !(myTree.HLT_PFMET120_PFMHT120 || myTree.HLT_PFHT900 || myTree.HLT_PFHT300_PFMET110 || myTree.HLT_PFJet450  || myTree.HLT_PFMETNoMu120_PFMHTNoMu120 ) ) continue;
+      //MG 2016 expression 
+      //if ( !(myTree.HLT_PFMET120_PFMHT120 || myTree.HLT_PFHT900 || myTree.HLT_PFHT300_PFMET110 || myTree.HLT_PFJet450  || myTree.HLT_PFMETNoMu120_PFMHTNoMu120 ) ) continue;
+      if ( !(myTree.HLT_PFMET120_PFMHT120 || myTree.HLT_PFHT1050 || myTree.HLT_PFHT500_PFMET100_PFMHT100 || myTree.HLT_PFJet500 || myTree.HLT_PFMETNoMu120_PFMHTNoMu120 || myTree.HLT_PFMETNoMu120_PFMHTNoMu120_PFHT60 ) ) continue;
+
       //      if ( !(myTree.HLT_PFMET100_PFMHT100 || myTree.HLT_PFHT800 || myTree.HLT_PFHT300_PFMET100) ) continue; //ICHEP 2016
       //OLD if( !(myTree.HLT_PFMETNoMu90_PFMHTNoMu90 || myTree.HLT_PFHT350_PFMET100 || myTree.HLT_PFHT800) ) continue;
 

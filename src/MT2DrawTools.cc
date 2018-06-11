@@ -1030,7 +1030,7 @@ std::vector<TCanvas*> MT2DrawTools::drawRegionYields_fromTree( const std::string
 
     float yMin_log = (data_ && h1_data->GetMinimum()>2.) ? 1. : 0.1;
 
-    TH2D* h2_axes_log = new TH2D("axes_log", "", 10, xMin, xMax, 10, yMin_log, yMax*2.0 );
+    TH2D* h2_axes_log = new TH2D("axes_log", "", 10, xMin, xMax, 10, yMin_log, yMax*10.0 );
     h2_axes_log->SetXTitle(xAxisTitle.c_str());
     h2_axes_log->SetYTitle(yAxisTitle.c_str());
 
