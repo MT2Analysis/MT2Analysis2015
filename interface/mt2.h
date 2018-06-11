@@ -69,6 +69,7 @@ public :
    Int_t         HLT_PFHT1050;
    Int_t         HLT_PFJet450;
    Int_t         HLT_Photon175;
+   Int_t         HLT_Photon200;
    Int_t         HLT_MuEG;
    Int_t         HLT_DiJet;
    Int_t         HLT_DoubleEl;
@@ -554,6 +555,7 @@ public :
    TBranch        *b_HLT_PFHT1050;   //!
    TBranch        *b_HLT_PFJet450;   //!
    TBranch        *b_HLT_Photon175;   //!
+   TBranch        *b_HLT_Photon200;   //!
    TBranch        *b_HLT_DiJet;   //!
    TBranch        *b_HLT_DoubleEl;   //!
    TBranch        *b_HLT_DoubleMu;   //!
@@ -1111,6 +1113,7 @@ void MT2Tree::Init(TTree *tree)
    fChain->SetBranchAddress("HLT_PFHT1050", &HLT_PFHT1050, &b_HLT_PFHT1050);
    fChain->SetBranchAddress("HLT_PFJet450", &HLT_PFJet450, &b_HLT_PFJet450);
    fChain->SetBranchAddress("HLT_Photon175", &HLT_Photon175, &b_HLT_Photon175);
+   fChain->SetBranchAddress("HLT_Photon200", &HLT_Photon200, &b_HLT_Photon200);
    fChain->SetBranchAddress("HLT_DiJet", &HLT_DiJet, &b_HLT_DiJet);
    fChain->SetBranchAddress("HLT_DoubleEl", &HLT_DoubleEl, &b_HLT_DoubleEl);
    fChain->SetBranchAddress("HLT_DoubleMu", &HLT_DoubleMu, &b_HLT_DoubleMu);
