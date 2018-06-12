@@ -541,13 +541,14 @@ double MT2DrawTools::getSFError(double integral_data, double error_data, double 
 
 TPaveText* MT2DrawTools::getRatioText( double integral_data, double integral_mc, double error_datamc ){
  
-  TPaveText* ratioText = new TPaveText( 0.133, -0.051, 0.4, 0.1 , "brNDC" );
-  ratioText->SetTextSize(0.035);
+TPaveText* ratioText = new TPaveText( 0.133, -0.051, 0.4, 0.1 , "brNDC" );
+  ratioText->SetTextSize(0.031);
   ratioText->SetTextFont(62);
   ratioText->SetTextColor(2);
   ratioText->SetFillColor(0);
   ratioText->SetTextAlign(11);
-  ratioText->AddText( Form("Data/MC = %.2f +/- %.2f", integral_data/integral_mc, error_datamc) );
+  //ratioText->AddText( Form("Data/MC = %.2f +/- %.2f", integral_data/integral_mc, error_datamc) );
+  ratioText->AddText( Form("MC scaled by %.2f", integral_data/integral_mc) );
 
   return ratioText;
 
@@ -640,7 +641,7 @@ TPaveText* MT2DrawTools::getFitText( TF1* f ){
   int ndof;
   MT2DrawTools::getSFFitParameters(f, sf, sfErr, chi2, ndof);
   //ratioText->AddText( Form("Data/MC = %.2f #pm %.2f (#chi^{2}/ndof = %.2f / %d)", sf, sfErr, chi2, ndof) );
-  ratioText->AddText( Form("Data/MC = %.2f #pm %.2f", sf, sfErr) );
+  ratioText->AddText( Form("Fitted Data/MC = %.2f #pm %.2f", sf, sfErr) );
 
   return ratioText;
 
@@ -833,7 +834,7 @@ TH1D* MT2DrawTools::getBand(TF1 *f, TMatrixD const& m, std::string name, bool ge
 
 std::vector<TCanvas*> MT2DrawTools::drawRegionYields_fromTree( const std::string& saveName, const std::string& varName, const std::string& selection, int nBins, float xMin, float xMax, std::string axisName, const std::string& units, const std::string& kinCuts, const std::string& topoCuts ) {
 //void MT2DrawTools::drawRegionYields_fromTree( MT2Analysis<MT2EstimateTree>* data, std::vector<MT2Analysis<MT2EstimateTree>* >  bgYields, const std::string& saveName, const std::string& varName, const std::string& selection, int nBins, float xMin, float xMax, std::string axisName, const std::string& units, const std::string& kinCuts ) {
-
+  std::cout << "[MT2DrawTools::drawRegionYields_fromTree] Starting with var=" << varName << ", selection=" << selection << std::endl;
 
   TString sel_tstr(selection);
   if( sel_tstr.Contains("weight") ) {
@@ -916,18 +917,27 @@ std::vector<TCanvas*> MT2DrawTools::drawRegionYields_fromTree( const std::string
     }
 
     float scaleFactor = mcSF_;
+    
+    double integralData = -9999, integralMC = -9999, errorData = -9999, errorMC = -9999;
+
     if( data_ ) {
-      float sf;
+
+      float sf =-9999;
+
       if( addOverflow_ ){
 	//adding the overflow bin to the SF calculation
-	std::cout << "Integrals: " << h1_data->Integral(1, nBins+1) << "\t" << mc_sum->Integral(1, nBins+1) << std::endl;
-	sf  = h1_data->Integral(1, nBins+1)/mc_sum->Integral(1, nBins+1);
+	integralData = h1_data->IntegralAndError(1, nBins+1, errorData);
+        integralMC = mc_sum->IntegralAndError(1, nBins+1, errorMC);
 
       }else{ 
 	//not adding the overflow bin
-	std::cout << "Integrals: " << h1_data->Integral(1, nBins) << "\t" << mc_sum->Integral(1, nBins) << std::endl;
-	sf  = h1_data->Integral(1, nBins)/mc_sum->Integral(1, nBins);
+	integralData = h1_data->IntegralAndError(1, nBins, errorData);
+        integralMC = mc_sum->IntegralAndError(1, nBins, errorMC);
       }
+
+      std::cout << "Integrals: data=" << integralData << "\t mc=" << integralMC << std::endl;
+      sf  = integralData/integralMC;
+
       std::cout << "SF: " << sf << std::endl;
       if( shapeNorm_ ) scaleFactor *= sf;
     }
@@ -962,15 +972,7 @@ std::vector<TCanvas*> MT2DrawTools::drawRegionYields_fromTree( const std::string
     TF1* fSF = (data_) ? MT2DrawTools::getSFFit(g_ratio, xMin, xMax) : 0;
     TGraphErrors* SFFitBand = (fSF) ? MT2DrawTools::getSFFitBand(fSF, xMin, xMax) : 0;
     
-//    double error_data;
-//    double integral_data = h1_data->IntegralAndError(0, nBins+1, error_data);
-//
-//    double error_mc;
-//    double integral_mc = mc_sum->IntegralAndError(0, nBins+1, error_mc);
-//
-//    double error_datamc = MT2DrawTools::getSFError(integral_data, error_data, integral_mc, error_mc );
-
-
+    double errorDataMC = MT2DrawTools::getSFError(integralData, errorData, integralMC, errorMC );
 
     TCanvas* c1 = new TCanvas(Form("c1_%s", iMT2->getName().c_str()), "", 600, 600);
     c1->cd();
@@ -1170,7 +1172,7 @@ std::vector<TCanvas*> MT2DrawTools::drawRegionYields_fromTree( const std::string
     
     TPaveText* fitText = (fSF) ? MT2DrawTools::getFitText( fSF ) : 0;
     
-    //    TPaveText* ratioText = MT2DrawTools::getRatioText( integral_data, integral_mc, error_datamc );
+    TPaveText* ratioText = MT2DrawTools::getRatioText( integralData, integralMC, errorDataMC );
     //    TLine* lineSF = MT2DrawTools::getSFLine(integral_data, integral_mc, xMin, xMax);
     //    TGraphErrors* SFband = MT2DrawTools::getSFBand(integral_data, error_data, integral_mc, error_mc, xMin, xMax);
     
@@ -1192,8 +1194,8 @@ std::vector<TCanvas*> MT2DrawTools::drawRegionYields_fromTree( const std::string
     }
     if( !shapeNorm_ && fitText )
       fitText->Draw("same");
-    //    ratioText->Draw("same");
-
+    if (shapeNorm_ && ratioText)
+      ratioText->Draw("same");
 
     (data_) ? MT2DrawTools::addLabels( (TCanvas*)pad1, lumi_, CMStext.c_str() ) : MT2DrawTools::addLabels( (TCanvas*)c1, lumi_, "CMS Simulation"); 
     //(data_) ? MT2DrawTools::addLabels( (TCanvas*)pad1, lumi_, CMStext.c_str() ) : MT2DrawTools::addLabels( (TCanvas*)pad1, lumi_, "CMS Simulation"); 
@@ -1211,7 +1213,9 @@ std::vector<TCanvas*> MT2DrawTools::drawRegionYields_fromTree( const std::string
     }
     if( !shapeNorm_ && fitText )
       fitText->Draw("same");
-    //    ratioText->Draw("same");
+    if (shapeNorm_ && ratioText)
+      ratioText->Draw("same");
+    
     (data_) ? MT2DrawTools::addLabels( (TCanvas*)pad1_log, lumi_, CMStext.c_str() ) : MT2DrawTools::addLabels( (TCanvas*)c1_log, lumi_, "CMS Simulation"); 
     //(data_) ? MT2DrawTools::addLabels( (TCanvas*)pad1_log, lumi_, CMStext.c_str() ) : MT2DrawTools::addLabels( (TCanvas*)pad1_log, lumi_, "CMS Simulation"); 
 
@@ -1227,7 +1231,6 @@ std::vector<TCanvas*> MT2DrawTools::drawRegionYields_fromTree( const std::string
       h2_axes_ratio->Draw("");
       lineCentral->Draw("same");
       if( !shapeNorm_ ){
-
         //systBand->Draw("3,same");
         lineCentral->Draw("same");
 
@@ -1235,10 +1238,8 @@ std::vector<TCanvas*> MT2DrawTools::drawRegionYields_fromTree( const std::string
           SFFitBand->Draw("3,same");
           fSF->Draw("same");
         }
-
 //        SFband->Draw("3,same");
 //        lineSF->Draw("same");
-
       }
 
       if( g_ratio ) g_ratio->Draw("PE,same");    
@@ -1253,19 +1254,17 @@ std::vector<TCanvas*> MT2DrawTools::drawRegionYields_fromTree( const std::string
       h2_axes_ratio->Draw("");
       lineCentral->Draw("same");
       if( !shapeNorm_ ){
-
         //systBand->Draw("3,same");
         lineCentral->Draw("same");
 
         if( data_ ) {
           SFFitBand->Draw("3,same");
           fSF->Draw("same");
-        }
-        
+        }       
 //        SFband->Draw("3,same");
 //        lineSF->Draw("same");
-
       }
+      
       if( g_ratio ) g_ratio->Draw("PE,same");
       gPad->RedrawAxis();
 

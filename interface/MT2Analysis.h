@@ -2282,7 +2282,7 @@ void MT2Analysis<T>::printFromFile( const std::string& fileName, const std::stri
 
   if( analyses.size()==0 ) {
     std::cout << "[MT2Analysis::printFromFile] WARNING!!! Didn't find any MT2Analysis in file " << fileName << std::endl;
-    return 0;
+    return;
   }
   else
     print( analyses, ofs, matchName );
@@ -2306,7 +2306,7 @@ void MT2Analysis<T>::print( std::vector<MT2Analysis<T>*> analyses, const std::st
     }
     if( analysis==0 ) {
       std::cout << "[MT2Analysis::print] WARNING!!! Didn't find any MT2Analysis named '" << matchName << std::endl;
-      return 0;
+      return;
     }
   }
 
