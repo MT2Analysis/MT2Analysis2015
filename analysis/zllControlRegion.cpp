@@ -274,7 +274,7 @@ int main(int argc, char* argv[]) {
     std::string samplesFile_data = "../samples/samples_" + cfg.dataSamples() + ".dat";
     std::cout << std::endl << std::endl;
     std::cout << "-> Loading data from file: " << samplesFile_data << std::endl;
-       std::vector<MT2Sample> samples_data = MT2Sample::loadSamples(samplesFile_data, "merged");  
+       std::vector<MT2Sample> samples_data = MT2Sample::loadSamples(samplesFile_data, "");  
     //std::vector<MT2Sample> samples_data = MT2Sample::loadSamples(samplesFile_data, "noDuplicates");  
 
     //    std::vector<MT2Sample> samples_data = MT2Sample::loadSamples(samplesFile_data, "Double");  
@@ -479,9 +479,12 @@ void computeYieldSnO( const MT2Sample& sample, const MT2Config& cfg,
     if(  myTree.nJet30==1 && !(myTree.jet_id[0]>=4)) continue;    
 
 
-
     //FILTERS
-    if( myTree.isData && !myTree.passFilters() ) continue;
+    // MG commented for 2017 data 
+    // TODO: add a flag "year" to make the switch 
+    //if( myTree.isData && !myTree.passFilters() ) continue;
+    if( myTree.isData && !myTree.passFilters2017() ) continue;
+
     if( myTree.isData &&  myTree.isGolden == 0 ) continue;
 
     if( !myTree.isData && !myTree.passFiltersMC() ) continue;
@@ -652,9 +655,6 @@ void computeYieldSnO( const MT2Sample& sample, const MT2Config& cfg,
       if( abs(myTree.lep_pdgId[0])==11 && myTree.lep_tightId[0]< 0.5 ) continue;
       if( abs(myTree.lep_pdgId[1])==11 && myTree.lep_tightId[1]< 0.5 ) continue;
       
-
-      //      if(myTree.nVert > 0 && myTree.nJet30 >= 1 && myTree.zll_ht>250. && ((myTree.nJet30>1 && myTree.zll_mt2>200.)||myTree.nJet30==1) && myTree.nJet30FailId == 0 && myTree.zll_deltaPhiMin > 0.3 && ( (myTree.nJet30>1 && myTree.zll_ht<1000. && myTree.zll_met_pt>250.) || (myTree.nJet30>1 && myTree.zll_ht>=1000. && myTree.zll_met_pt>30.) || (myTree.nJet30==1 &&myTree.zll_met_pt>250.)) &&  myTree.zll_diffMetMht < 0.5*myTree.zll_met_pt &&  myTree.nlep==2 && (myTree.lep_pdgId[0]*myTree.lep_pdgId[1])<0 && ((myTree.nJet30==1 && myTree.jet_id[0]>=4) || myTree.nJet30>1) && myTree.lep_pt[0]>=25. && myTree.lep_pt[1]>=20. && myTree.Flag_HBHENoiseFilter>0 && myTree.Flag_HBHENoiseIsoFilter>0 && myTree.Flag_globalTightHalo2016Filter>0 && myTree.Flag_EcalDeadCellTriggerPrimitiveFilter>0 && myTree.Flag_goodVertices>0 && myTree.Flag_eeBadScFilter>0 && myTree.Flag_badMuonFilter>0 && myTree.Flag_badChargedHadronFilter>0 && (myTree.HLT_DoubleMu || myTree.HLT_DoubleMu_NonIso || myTree.HLT_SingleMu_NonIso || myTree.HLT_DoubleEl || myTree.HLT_DoubleEl33 || myTree.HLT_Photon165_HE10 ) && (abs(myTree.lep_pdgId[0]) == abs(myTree.lep_pdgId[1])) && ((abs(myTree.lep_pdgId[0])==11 && myTree.lep_tightId[0]> 0.5) || (abs(myTree.lep_pdgId[0])==13)) && ((abs(myTree.lep_pdgId[1])==11 && myTree.lep_tightId[1]> 0.5) || (abs(myTree.lep_pdgId[1])==13)) && myTree.jet_pt[0]<13000. && myTree.met_pt/myTree.met_caloPt < 5. );
-      //      else continue;
 
       // float HLT_weight = 1;
       float HLT_weight = getHLTweight( myTree.lep_pdgId[0], myTree.lep_pdgId[1], myTree.lep_pt[0], myTree.lep_pt[1], 0 );
@@ -883,12 +883,6 @@ void computeYieldSnO( const MT2Sample& sample, const MT2Config& cfg,
 
       if( abs(myTree.lep_pdgId[0])==11 && myTree.lep_tightId[0]< 0.5 ) continue;
       if( abs(myTree.lep_pdgId[1])==11 && myTree.lep_tightId[1]< 0.5 ) continue;
-
-
-      //      if(myTree.nVert > 0 && myTree.nJet30 >= 1 && myTree.zll_ht>250. && ((myTree.nJet30>1 && myTree.zll_mt2>200.)||myTree.nJet30==1) && myTree.nJet30FailId == 0 && myTree.zll_deltaPhiMin > 0.3 && ( (myTree.nJet30>1 && myTree.zll_ht<1000. && myTree.zll_met_pt>250.) || (myTree.nJet30>1 && myTree.zll_ht>=1000. && myTree.zll_met_pt>30.) || (myTree.nJet30==1 &&myTree.zll_met_pt>250.)) &&  myTree.zll_diffMetMht < 0.5*myTree.zll_met_pt &&  myTree.nlep==2 && (myTree.lep_pdgId[0]*myTree.lep_pdgId[1])<0 && ((myTree.nJet30==1 && myTree.jet_id[0]>=4) || myTree.nJet30>1) && myTree.lep_pt[0]>=25. && myTree.lep_pt[1]>=20. && myTree.Flag_HBHENoiseFilter>0 && myTree.Flag_HBHENoiseIsoFilter>0 && myTree.Flag_globalTightHalo2016Filter>0 && myTree.Flag_EcalDeadCellTriggerPrimitiveFilter>0 && myTree.Flag_goodVertices>0 && myTree.Flag_eeBadScFilter>0 && myTree.Flag_badMuonFilter>0 && myTree.Flag_badChargedHadronFilter>0 && (myTree.HLT_MuX_Ele12 || myTree.HLT_Mu8_EleX || myTree.HLT_Mu33_Ele33_NonIso || myTree.HLT_Mu30_Ele30_NonIso) && (abs(myTree.lep_pdgId[0]) != abs(myTree.lep_pdgId[1])) && ((abs(myTree.lep_pdgId[0])==11 && myTree.lep_tightId[0]> 0.5) || (abs(myTree.lep_pdgId[0])==13)) && ((abs(myTree.lep_pdgId[1])==11 && myTree.lep_tightId[1]> 0.5) || (abs(myTree.lep_pdgId[1])==13)) && myTree.jet_pt[0]<13000. && myTree.met_pt/myTree.met_caloPt < 5. );
-      //      else continue;
-      //if( myTree.zll_ht>=250. && ((myTree.nJet30>1 && myTree.zll_mt2>=200.) || (myTree.zll_met_pt>250.)) );
-      //else continue;
 
       float HLT_weight = getHLTweight( myTree.lep_pdgId[0], myTree.lep_pdgId[1], myTree.lep_pt[0], myTree.lep_pt[1], 0 );
 
