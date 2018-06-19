@@ -88,9 +88,9 @@ int main( int argc, char* argv[] ) {
 
     std::string samplesFile = "../samples/samples_" + cfg.mcSamples() + ".dat";
     
-    //std::vector<MT2Sample> samples_gammaJet = MT2Sample::loadSamples(samplesFile, "gjet");
+    std::vector<MT2Sample> samples_gammaJet = MT2Sample::loadSamples(samplesFile, "gjet");
     //std::vector<MT2Sample> samples_gammaJet = MT2Sample::loadSamples(samplesFile, 200, 299);
-    std::vector<MT2Sample> samples_gammaJet = MT2Sample::loadSamples(samplesFile, "GJets");
+    //std::vector<MT2Sample> samples_gammaJet = MT2Sample::loadSamples(samplesFile, "GJets");
     if( samples_gammaJet.size()==0 ) {
       std::cout << "There must be an error: didn't find any gamma+jet files in " << samplesFile << "!" << std::endl;
       exit(1209);
@@ -394,7 +394,7 @@ void computeYield( const MT2Sample& sample, const MT2Config& cfg,
 
     if(cfg.analysisType() == "mt2"){
    
-      if( !myTree.passSelection("gamma") ) continue;
+      if( !myTree.passSelection("gamma", 2017) ) continue;
 
       if( myTree.mt2>200. ) continue; // orthogonal to signal region
       if( myTree.gamma_pt[0]<180. ) continue;
@@ -462,13 +462,14 @@ void computeYield( const MT2Sample& sample, const MT2Config& cfg,
       if( !( myTree.isGolden ) ) continue;
 
 
+      //if( !(myTree.passFilters2017() ) ) continue;
       if( !(myTree.passFilters() ) ) continue;
     
+      // MG new trigger
+      // TODO: add a flag to switch between years
       if( !(myTree.HLT_Photon165_HE10) ) continue;
+//      if( !(myTree.HLT_Photon200) ) continue;
     
-      //if( !(nVert>0. && Flag_HBHENoiseFilter==1 && Flag_eeBadScFilter==1 ) ) continue;
-      //if( !(myTree.nVert>0. && myTree.Flag_HBHENoiseFilter==1 ) ) continue;
-
     }
 
     if( !(myTree.nVert>0 && myTree.Flag_HBHENoiseFilter==1 && myTree.Flag_HBHENoiseIsoFilter==1 && myTree.Flag_EcalDeadCellTriggerPrimitiveFilter==1 && myTree.Flag_goodVertices==1 && myTree.Flag_eeBadScFilter==1 && myTree.Flag_badChargedHadronFilter==1)) continue;

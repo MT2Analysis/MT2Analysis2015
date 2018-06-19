@@ -432,17 +432,14 @@ MT2Analysis<T>* computeYield( const MT2Sample& sample, const MT2Config& cfg, std
     myTree.GetEntry(iEntry);
     
     if( myTree.isData && !myTree.isGolden ) continue;
-    //For 18.1 ifb
-    //if( !(myTree.run<=276811 || (278820<=myTree.run && myTree.run<=279931)) )
-    //  continue;
 
     if( regionsSet!="13TeV_noCut" )
-      if( !myTree.passSelection(cfg.additionalStuff()) ) continue;
+      if( !myTree.passSelection(cfg.additionalStuff()), 2017 ) continue;
 
     if ( myTree.nJet30==1 && !myTree.passMonoJetId(0) ) continue;
       
     float ht   = myTree.ht;
-    //    float met  = myTree.met_pt;
+    //float met  = myTree.met_pt;
     float minMTBmet = myTree.minMTBMet;
     int njets  = myTree.nJet30;
     int nbjets = myTree.nBJet20;    
@@ -458,13 +455,7 @@ MT2Analysis<T>* computeYield( const MT2Sample& sample, const MT2Config& cfg, std
    
     //Double_t weight = (myTree.isData) ? 1. : myTree.evt_scale1fb*cfg.lumi()*myTree.puWeight;
     Double_t weight = (myTree.isData) ? 1. : myTree.evt_scale1fb;//*cfg.lumi();
-    //Double_t weight = (myTree.isData) ? 1. : myTree.evt_scale1fb*cfg.lumi();
     Double_t weight_syst = 1.;
-
-    //    if( !myTree.isData ){
-    //      weight *= myTree.weight_btagsf;
-    //      weight *= myTree.weight_lepsf;
-    //    }
 
     if( !myTree.isData ){
       weight *= myTree.weight_btagsf;
@@ -483,41 +474,31 @@ MT2Analysis<T>* computeYield( const MT2Sample& sample, const MT2Config& cfg, std
 
     }
 
-
-    //   if( myTree.evt_id > 1000 )
-      //     weight_syst = myTree.weight_isr;
+      //if( myTree.evt_id > 1000 )
+      // weight_syst = myTree.weight_isr;
     
-    //The filters to be applied to MC only
-    // if( !(myTree.nVert>0 && myTree.Flag_HBHENoiseFilter==1 && myTree.Flag_HBHENoiseIsoFilter==1 && myTree.Flag_EcalDeadCellTriggerPrimitiveFilter==1 && myTree.Flag_goodVertices==1 && myTree.Flag_eeBadScFilter==1 && myTree.Flag_badChargedHadronFilter==1)) continue;
-
-
     if( myTree.isData ) {
-      
       // MG commented for 2017 data 
       // TODO: add a flag "year" to make the switch 
       // if( !myTree.passFilters() ) continue;
       if( !myTree.passFilters2017() ) continue;
-
-
     }else
       if( !myTree.passFiltersMC() ) continue;
     
     if( myTree.nJet200MuFrac50DphiMet > 0 ) continue; // new RA2 filter
+    // what's that, not mentioned in the analysis note
+    if( myTree.met_miniaodPt/myTree.met_caloPt > 5.0 ) continue;
 
     //crazy events! To be piped into a separate txt file
     if(myTree.jet_pt[0] > 13000){
       std::cout << "Rejecting weird event at run:lumi:evt = " << myTree.run << ":" << myTree.lumi << ":" << myTree.evt << std::endl;
       continue;
     }
-    //NEW check if is there is a nan
+    //check if is there is a nan
     if( isnan(myTree.ht) || isnan(myTree.met_pt) ||  isinf(myTree.ht) || isinf(myTree.met_pt)  ){
       std::cout << "Rejecting nan/inf event at run:lumi:evt = " << myTree.run << ":" << myTree.lumi << ":" << myTree.evt << std::endl;
       continue;
     }
-
-    if( myTree.nJet200MuFrac50DphiMet > 0 ) continue;
-
-    if( myTree.met_miniaodPt/myTree.met_caloPt > 5.0 ) continue;
 
     if (myTree.isData) {
 
@@ -741,10 +722,10 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
 
     if( regionsSet!="13TeV_noCut" ){
      
-      if( !myTree.passSelection(cfg.additionalStuff()) ) passRecoMET=false;
+      if( !myTree.passSelection(cfg.additionalStuff(), 2017)) passRecoMET=false;
       
       if(dogenmet)
-	if( !myTree.passSelection("genmet") ) passGenMET=false;      
+	if( !myTree.passSelection("genmet"), 2017) passGenMET=false;      
       
       if (!passGenMET && !passRecoMET) continue;
 
