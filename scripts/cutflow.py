@@ -1,9 +1,14 @@
 # Script to write the cutflow for several regions of the MT2 analysis
 # specigy the sample name of the babytree, the year of data-taking, and the region where you want the cutflow
 
+# setup:
+# a recent root version and a python version >=2.7
+
 # For the moment implemented only for SR and CR1lep
 # TODO: implement also for di-lepton and photon region
-# Note: the 'cleanings' are commented out because take forever to run (why?)
+# Note: the so-called 'cleanings' are commented out because take forever to run (why?)
+# anyhow the impact is very small
+
 
 from ROOT import TChain, TH1F
 
@@ -25,8 +30,7 @@ cuts['2016']['MT2'] =               '((((mt2>200 && ht<1500) || (mt2>400&&ht>=15
 cuts['2016']['leptonVeto'] =        '(nMuons10==0 && nElectrons10==0)'
 cuts['2016']['isoTrackVeto'] =      '(nPFLep5LowMT==0 && nPFHad10LowMT==0)'
 cuts['2016']['1lepton'] =           '(nLepLowMT==1)' # should be equivalent to '(nMuons10==1 || nElectrons10==1 || nPFLep5LowMT==1 || nPFHad10LowMT==1 )'
-# that's all for the baseline event categorization
-# then we bin in HT, MT2, njets, nbjets
+cuts['2016']['incl1leptonCR'] =     '(met_pt>250  && nJet30>1 && mt2>200.)'
 
 cuts['2017'] = {}
 cuts['2017']['noCut'] =             cuts['2016']['noCut']
@@ -43,10 +47,11 @@ cuts['2017']['leptonVeto'] =        cuts['2016']['leptonVeto']
 cuts['2017']['isoTrackVeto'] =      cuts['2016']['isoTrackVeto']
 cuts['2017']['MT2'] =               cuts['2016']['MT2']
 cuts['2017']['1lepton'] =           cuts['2016']['1lepton']
+cuts['2017']['incl1leptonCR'] =     cuts['2016']['incl1leptonCR']
 
 ordered_cutNames = {}
 ordered_cutNames['SR'] =     ['noCut' ,'isGolden', 'goodVertex', 'filters', 'triggers', 'HT_Etmiss', 'nJets>0', 'deltaPhi>0.3', 'HTmiss-Etmiss', 'MT2', 'leptonVeto','isoTrackVeto', ]
-ordered_cutNames['CR1lep'] = ['noCut' ,'isGolden', 'goodVertex', 'filters', 'triggers', 'HT_Etmiss', 'nJets>0', 'deltaPhi>0.3', 'HTmiss-Etmiss', 'MT2', '1lepton', ]
+ordered_cutNames['CR1lep'] = ['noCut' ,'isGolden', 'goodVertex', 'filters', 'triggers', 'HT_Etmiss', 'nJets>0', 'deltaPhi>0.3', 'HTmiss-Etmiss', 'MT2', '1lepton', 'incl1leptonCR']
 #ordered_cutNames['CR2lep'] =
 #ordered_cutNames['CR1ph'] =
 #ordered_cutNames['SR'] = ['noCut', 'cleanings']
@@ -93,7 +98,7 @@ class SampleCutflow(object):
 
   def stamp(self):
     print '\n\n\n'
-    print 'Cutflow for sample {s} in year {y}'.format(s=self.sampleName, y=self.year)
+    print 'Cutflow for sample={s}, year={y}, region={r}'.format(s=self.sampleName, y=self.year, r=self.region)
     print 'File names {n}'.format(n='\t\n'.join(self.fileNames))
     print ''
 
@@ -109,20 +114,19 @@ if __name__ == "__main__":
   sampleName = 'Data 2017, periods=BCDEF, Streams=MET, JetHT, HTMHT, SingleElectron, DoubleMuon, DoubleEG, MuonEG'
   year = '2017'
   treeName = 'mt2'
-  region = 'SR'
-  regions = ['SR', 'CR1lep']
+  regions = ['CR1lep'] #'SR'
 
 
-  fileNames = ['root://t3dcachedb.psi.ch//pnfs/psi.ch/cms/trivcat/store/user/mschoene/MT2production/80X/PostProcessed/reMini2017_runB_Feb28_postProc_Mar04/skimAndPrune/merged_DoubleEG_DoubleMuon_HTMHT_JetHT_MET_MuonEG_SingleElectron_SingleMuon_SinglePhoton.root',
-'root://t3dcachedb.psi.ch//pnfs/psi.ch/cms/trivcat/store/user/mschoene/MT2production/80X/PostProcessed/reMini2017_runC_Feb28_postProc_Mar04/skimAndPrune/merged_DoubleEG_DoubleMuon_HTMHT_JetHT_MET_MuonEG_SingleElectron_SingleMuon_SinglePhoton.root',
-'root://t3dcachedb.psi.ch//pnfs/psi.ch/cms/trivcat/store/user/mschoene/MT2production/80X/PostProcessed/reMini2017_runD_Feb28_postProc_Mar04/skimAndPrune/merged_DoubleEG_DoubleMuon_HTMHT_JetHT_MET_MuonEG_SingleElectron_SingleMuon_SinglePhoton.root',
-'root://t3dcachedb.psi.ch//pnfs/psi.ch/cms/trivcat/store/user/mschoene/MT2production/80X/PostProcessed/reMini2017_runE_Feb28_postProc_Mar04/skimAndPrune/merged_DoubleEG_DoubleMuon_HTMHT_JetHT_MET_MuonEG_SingleElectron_SingleMuon_SinglePhoton.root',
-'root://t3dcachedb.psi.ch//pnfs/psi.ch/cms/trivcat/store/user/mschoene/MT2production/80X/PostProcessed/reMini2017_runF_Feb28_postProc_Mar06/skimAndPrune/merged_DoubleEG_DoubleMuon_HTMHT_JetHT_MET_MuonEG_SingleElectron_SingleMuon_SinglePhoton.root',
-'root://t3dcachedb.psi.ch//pnfs/psi.ch/cms/trivcat/store/user/mschoene/MT2production/80X/PostProcessed/reMini2017_runG_Feb28_postProc_Mar06/skimAndPrune/merged_DoubleEG_DoubleMuon_HTMHT_JetHT_MET_MuonEG_SingleElectron_SingleMuon_SinglePhoton.root',
-'root://t3dcachedb.psi.ch//pnfs/psi.ch/cms/trivcat/store/user/mschoene/MT2production/80X/PostProcessed/reMini2017_runH_Feb28_postProc_Mar04/skimAndPrune/merged_DoubleEG_DoubleMuon_HTMHT_JetHT_MET_MuonEG_SingleElectron_SingleMuon_SinglePhoton.root'
-              ]
-  sampleName = 'Data 2016, periods=CDEFGH, Streams=MET, JetHT, HTMHT, SingleElectron, DoubleMuon, DoubleEG, MuonEG, SinglePhoton, SingleMuon'
-  year = '2016'
+  #fileNames = ['root://t3dcachedb.psi.ch//pnfs/psi.ch/cms/trivcat/store/user/mschoene/MT2production/80X/PostProcessed/reMini2017_runB_Feb28_postProc_Mar04/skimAndPrune/merged_DoubleEG_DoubleMuon_HTMHT_JetHT_MET_MuonEG_SingleElectron_SingleMuon_SinglePhoton.root',
+#'root://t3dcachedb.psi.ch//pnfs/psi.ch/cms/trivcat/store/user/mschoene/MT2production/80X/PostProcessed/reMini2017_runC_Feb28_postProc_Mar04/skimAndPrune/merged_DoubleEG_DoubleMuon_HTMHT_JetHT_MET_MuonEG_SingleElectron_SingleMuon_SinglePhoton.root',
+#'root://t3dcachedb.psi.ch//pnfs/psi.ch/cms/trivcat/store/user/mschoene/MT2production/80X/PostProcessed/reMini2017_runD_Feb28_postProc_Mar04/skimAndPrune/merged_DoubleEG_DoubleMuon_HTMHT_JetHT_MET_MuonEG_SingleElectron_SingleMuon_SinglePhoton.root',
+#'root://t3dcachedb.psi.ch//pnfs/psi.ch/cms/trivcat/store/user/mschoene/MT2production/80X/PostProcessed/reMini2017_runE_Feb28_postProc_Mar04/skimAndPrune/merged_DoubleEG_DoubleMuon_HTMHT_JetHT_MET_MuonEG_SingleElectron_SingleMuon_SinglePhoton.root',
+#'root://t3dcachedb.psi.ch//pnfs/psi.ch/cms/trivcat/store/user/mschoene/MT2production/80X/PostProcessed/reMini2017_runF_Feb28_postProc_Mar06/skimAndPrune/merged_DoubleEG_DoubleMuon_HTMHT_JetHT_MET_MuonEG_SingleElectron_SingleMuon_SinglePhoton.root',
+#'root://t3dcachedb.psi.ch//pnfs/psi.ch/cms/trivcat/store/user/mschoene/MT2production/80X/PostProcessed/reMini2017_runG_Feb28_postProc_Mar06/skimAndPrune/merged_DoubleEG_DoubleMuon_HTMHT_JetHT_MET_MuonEG_SingleElectron_SingleMuon_SinglePhoton.root',
+#'root://t3dcachedb.psi.ch//pnfs/psi.ch/cms/trivcat/store/user/mschoene/MT2production/80X/PostProcessed/reMini2017_runH_Feb28_postProc_Mar04/skimAndPrune/merged_DoubleEG_DoubleMuon_HTMHT_JetHT_MET_MuonEG_SingleElectron_SingleMuon_SinglePhoton.root'
+#              ]
+#  sampleName = 'Data 2016, periods=CDEFGH, Streams=MET, JetHT, HTMHT, SingleElectron, DoubleMuon, DoubleEG, MuonEG, SinglePhoton, SingleMuon'
+#  year = '2016'
   treeName = 'mt2'
 
   for region in regions:
