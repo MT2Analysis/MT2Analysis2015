@@ -30,7 +30,7 @@ cuts['2016']['MT2'] =               '((((mt2>200 && ht<1500) || (mt2>400&&ht>=15
 cuts['2016']['leptonVeto'] =        '(nMuons10==0 && nElectrons10==0)'
 cuts['2016']['isoTrackVeto'] =      '(nPFLep5LowMT==0 && nPFHad10LowMT==0)'
 cuts['2016']['1lepton'] =           '(nLepLowMT==1)' # should be equivalent to '(nMuons10==1 || nElectrons10==1 || nPFLep5LowMT==1 || nPFHad10LowMT==1 )'
-cuts['2016']['incl1leptonCR'] =     '(met_pt>250  && nJet30>1 && mt2>200.)'
+cuts['2016']['incl1leptonCR'] =     '(ht>250. && met_pt>250  && nJet30>1 && mt2>200.)'
 
 cuts['2017'] = {}
 cuts['2017']['noCut'] =             cuts['2016']['noCut']
