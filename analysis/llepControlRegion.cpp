@@ -248,8 +248,9 @@ void computeYield( const MT2Sample& sample, const MT2Config& cfg, MT2Analysis<MT
     }else
       if( !myTree.passFiltersMC() ) continue;
 
-    if( !myTree.passBaseline(2017) ) continue;
-    if( myTree.nLepLowMT != 1 ) continue; 
+    if( !myTree.passBaseline() ) continue;
+    if( myTree.nLepLowMT==1 ) ; // For lost lepton CR
+    else continue;
     
     if ( myTree.nJet30==1 && !myTree.passMonoJetId(0) ) continue;
 

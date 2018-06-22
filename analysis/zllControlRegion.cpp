@@ -471,7 +471,7 @@ void computeYieldSnO( const MT2Sample& sample, const MT2Config& cfg,
 
     if( cfg.analysisType() == "mt2"){
       if( regionsSet!="13TeV_noCut" )
-        if( !myTree.passSelection("zll", 2017) ) continue;
+        if( !myTree.passSelection("zll") ) continue;
     }
 
     if(( myTree.lep_pdgId[0]*myTree.lep_pdgId[1])>0 )   continue;

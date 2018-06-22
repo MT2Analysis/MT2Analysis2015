@@ -1004,8 +1004,8 @@ public :
 
    MT2Tree(TTree *tree=0);
    virtual ~MT2Tree();
-   virtual Bool_t   passSelection(TString sel = "", int year=2016) const;
-   virtual Bool_t   passBaseline (TString sel = "", int year=2016) const;
+   virtual Bool_t   passSelection(TString sel = "") const;
+   virtual Bool_t   passBaseline (TString sel = "") const;
    virtual Bool_t   passLeptonVeto  () const;
    virtual Bool_t   passIsoTrackVeto() const;
    virtual Bool_t   passFilters     () const;
@@ -1591,12 +1591,12 @@ void MT2Tree::Show(Long64_t entry)
    fChain->Show(entry);
 }
 
-Bool_t MT2Tree::passSelection(TString sel, int year) const 
+Bool_t MT2Tree::passSelection(TString sel) const 
 {
   if(sel=="zll" || sel=="singleLepton"){
-    return passBaseline(sel, year);
+    return passBaseline(sel);
   }else{
-  return passBaseline(sel, year) && passLeptonVeto() && passIsoTrackVeto();
+  return passBaseline(sel) && passLeptonVeto() && passIsoTrackVeto();
   }
 }
 
@@ -1634,7 +1634,7 @@ Bool_t MT2Tree::passMonoJetId( int j ) const {
   return jet_id[j]>=4;
 }
 
-Bool_t MT2Tree::passBaseline(TString sel, int year) const 
+Bool_t MT2Tree::passBaseline(TString sel) const 
 {
 
   if (sel=="gamma")
@@ -1671,10 +1671,9 @@ Bool_t MT2Tree::passBaseline(TString sel, int year) const
       nJet30 >=1 &&
       nJet30FailId == 0 &&
       deltaPhiMin > 0.3 && 
-      diffMetMht < 0.5*met_pt &&
-      ( ( year==2016 &&  ( ( nJet30>1 && ht<1000. && met_pt>250.) || ( nJet30>1 && ht>=1000. && met_pt>30.) || (nJet30==1 && met_pt>250.) ) ) || 
-        ( year==2017 &&  ( ( nJet30>1 && ht<1200. && met_pt>250.) || ( nJet30>1 && ht>=1200. && met_pt>30.) || (nJet30==1 && met_pt>250.) ) ) 
-      );
+      ( ( nJet30>1 && ht<1000. && met_pt>250.) || ( nJet30>1 && ht>=1000. && met_pt>30.) || (nJet30==1 && met_pt>250.) ) && 
+      //      ( (ht<1000. && met_pt>200.) || (ht>=1000. && met_pt>30.) || (nJet30==1 && met_pt>200.) ) && 
+      diffMetMht < 0.5*met_pt;
   //    return nVert > 0; 
   
   return kFALSE;
