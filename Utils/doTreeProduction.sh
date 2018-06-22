@@ -14,7 +14,8 @@
 #inputProductionFolder="/store/user/mschoene/crab/8_0_26/reMini2017_runG_Feb28"
 #inputProductionFolder="/store/user/mschoene/crab/8_0_26/reMini2017_runH_Feb28"
 
-inputProductionFolder="/store/user/mschoene/crab/8_0_26/MT2_gg_15Mar_CutBased15Id"
+#inputProductionFolder="/store/user/mschoene/crab/8_0_26/MT2_gg_15Mar_CutBased15Id"
+inputProductionFolder="/store/user/mratti/crab/MT2_9_4_1/TEST0"
 
 
 #inputProductionFolder="/store/user/mschoene/crab/8_0_11/signal2017_Jan11/"
@@ -22,32 +23,31 @@ inputProductionFolder="/store/user/mschoene/crab/8_0_26/MT2_gg_15Mar_CutBased15I
 
 # In case you want to run the same production twice, adding a post-fix may help
 #postFix=""
-#postFix="_preProc_Jan11"
-postFix="_preProc_Mar20"
-#postFix="_postProc_Dec09"
+postFix="_postProc_data2017_SinglePhoton_v0"
 
 # For reading input from T2 (default):
-site="lcg.cscs.ch"
-se="storage01"
+#site="lcg.cscs.ch"
+#se="storage01"
 # or alternatively for reading from T3 (for legacy)
-#site="psi.ch"
-#se="t3dcachedb03"
+site="psi.ch"
+se="t3dcachedb03"
 
 # You should uncomment only one of the two, because data and MC production usually require different settings 
-#listOfSamplesFile="postProcessing2016-Data.cfg"  #for data inputs
-listOfSamplesFile="postProcessing2016-MC.cfg"   # for MC inputs
+listOfSamplesFile="postProcessing2017-Data_SinglePhoton.cfg"  #for data inputs
+#listOfSamplesFile="postProcessing2016-MC.cfg"   # for MC inputs
 
 isCrab=1
 inputPU="MyDataPileupHistogram.root"
-GoldenJSON="/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/ReReco/Final/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt"
+#GoldenJSON="/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/ReReco/Final/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt"
+GoldenJSON="/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/Final/Cert_294927-306462_13TeV_PromptReco_Collisions17_JSON.txt"
 #"$PWD/gold_runF.txt"  #produced, for example for runE, with: filterJSON.py --min=276831 --max=277420 --output=gold_runE.txt gold_json.txt
 
 ###CHANGE
-doSkimmingPruning=0 #1 as default; 0 for *_forQCD datasets (in data), which don't contain the necessary info to run the skimming and which are already pruned
-applyJSON=0     #0 for MC
-doFilterTxt=0   #0 for MC
-doAllSF=1       #1 for MC
-doPreProc=1     #0 (only 1 for large MC samples (almost all of them now!) or if you want to split MC samples, then run ./doTreeProduction pre first)
+doSkimmingPruning=1 #1 as default; 0 for *_forQCD datasets (in data), which don't contain the necessary info to run the skimming and which are already pruned
+applyJSON=1     #0 for MC
+doFilterTxt=1   #0 for MC
+doAllSF=0       #1 for MC
+doPreProc=0     #0 (only 1 for large MC samples (almost all of them now!) or if you want to split MC samples, then run ./doTreeProduction pre first)
 
 
 
@@ -285,8 +285,8 @@ EOF
 
 ###qsub  -q short.q -l h_vmem=5g batchScript_${name}.sh;
 
-	qsub -q long.q -l h_vmem=5g $scriptName; 
-#	qsub -q all.q $scriptName;
+	#qsub -q long.q -l h_vmem=5g $scriptName; 
+	qsub -q all.q -l h_vmem=5g $scriptName;
 	rm $scriptName;
 	
     done < $listOfSamplesFile
@@ -683,8 +683,8 @@ if [[ "$1" = "mergeData" ]]; then
     # If this is not the case, the 'input' variable here may need to be set properly by hand
     # no automated yet to merge the three skim flavours... (un)comment out as necessary
     # input="${outputFolder}/skimAndPrune/"
-    #input="${outputFolder}/"
-    input="${outputFolder}/QCDskimAndPrune/"
+    input="${outputFolder}/"
+    #input="${outputFolder}/QCDskimAndPrune/"
     #input="${outputFolder}/QCDMonoJetSkimAndPrune/"
 
 
@@ -697,8 +697,9 @@ if [[ "$1" = "mergeData" ]]; then
 
     # Add other relevant strings here if you want to merge more than these 3 datasets
     #datasets="MET HTMHT JetHT"
+    #datasets="MET HTMHT JetHT SingleElectron DoubleEG DoubleMuon MuonEG"
+    datasets="SinglePhoton"
     #datasets="MET HTMHT JetHT SingleElectron SingleMuon SinglePhoton DoubleEG DoubleMuon MuonEG"
-    datasets="DoubleEG DoubleMuon HTMHT JetHT MET MuonEG SingleElectron SingleMuon SinglePhoton"
 
     rootFileName="merged"
     for d in $datasets; do
