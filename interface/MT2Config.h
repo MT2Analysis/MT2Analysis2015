@@ -17,7 +17,7 @@ class MT2Config {
   float lumi_SinglePhoton()  const;
   float lumi_DoubleEG()      const;
   float lumi_DoubleMu()      const;
-
+  int year() const {return year_;};
  
   std::string regionsSet()             const { return regionsSet_; };
   std::string mcSamples()              const { return mcSamples_; };
@@ -63,6 +63,7 @@ class MT2Config {
   float lumi_SinglePhoton_;
   float lumi_DoubleEG_;
   float lumi_DoubleMu_;
+  int year_;
 
   std::string regionsSet_;
   std::string mcSamples_;

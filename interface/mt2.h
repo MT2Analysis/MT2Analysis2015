@@ -30,7 +30,7 @@ public :
    Int_t           isGolden;
    Int_t           isSilver;
    //Float_t         xsec;
-   // 
+   //
    Int_t         HLT_PFMET170;
    Int_t         HLT_Photon90_R9Id90_HE10_IsoM;
    Int_t         HLT_Photon75_R9Id90_HE10_IsoM;
@@ -511,7 +511,7 @@ public :
    Int_t LHEweight_id[1000];
    Float_t LHEweight_wgt[1000];
    Float_t LHEweight_original;
-   
+
    // List of branches
    TBranch        *b_run;   //!
    TBranch        *b_lumi;   //!
@@ -652,7 +652,7 @@ public :
    TBranch        *b_nTaus20;   //!
    TBranch        *b_nGammas20;   //!
    TBranch        *b_minMTBMet;   //!
-   TBranch        *b_nLepLowMT;   //! 
+   TBranch        *b_nLepLowMT;   //!
    TBranch        *b_nPFLep5LowMT;   //!
    TBranch        *b_nPFHad10LowMT;   //!
    TBranch        *b_mt2_had;   //!
@@ -667,8 +667,8 @@ public :
    TBranch        *b_gamma_nJet25;   //!
    TBranch        *b_gamma_nJet30;   //!
    TBranch        *b_gamma_nJet40;   //!
-   TBranch        *b_gamma_nBJet20;   //! 
-   TBranch        *b_gamma_nBJet25;   //! 
+   TBranch        *b_gamma_nBJet20;   //!
+   TBranch        *b_gamma_nBJet25;   //!
    TBranch        *b_gamma_nBJet40;   //!
    TBranch        *b_gamma_nJet30FailId;   //!
    TBranch        *b_gamma_ht;   //!
@@ -1005,10 +1005,10 @@ public :
    MT2Tree(TTree *tree=0);
    virtual ~MT2Tree();
    virtual Bool_t   passSelection(TString sel = "") const;
-   virtual Bool_t   passBaseline (TString sel = "") const;
+   virtual Bool_t   passBaselineKinematic (TString sel = "") const;
    virtual Bool_t   passLeptonVeto  () const;
    virtual Bool_t   passIsoTrackVeto() const;
-   virtual Bool_t   passFilters     () const;
+   virtual Bool_t   passFilters2016 () const;
    virtual Bool_t   passFilters2017 () const;
    virtual Bool_t   passFiltersMC   () const;
    virtual Bool_t   passGammaAdditionalSelection( int sampleId ) const;
@@ -1027,7 +1027,7 @@ public :
 #endif
 
 #ifdef mt2_cxx
-MT2Tree::MT2Tree(TTree *tree) : fChain(0) 
+MT2Tree::MT2Tree(TTree *tree) : fChain(0)
 {
 
   loadGenStuff = true;
@@ -1532,7 +1532,7 @@ void MT2Tree::Init(TTree *tree)
    fChain->SetBranchAddress("evt_id", &evt_id, &b_evt_id);
    fChain->SetBranchAddress("weight_lepsf", &weight_lepsf, &b_weight_lepsf);
    fChain->SetBranchAddress("weight_lepsf_UP", &weight_lepsf_UP, &b_weight_lepsf_UP);
-   fChain->SetBranchAddress("weight_lepsf_DN", &weight_lepsf_DN, &b_weight_lepsf_DN);  
+   fChain->SetBranchAddress("weight_lepsf_DN", &weight_lepsf_DN, &b_weight_lepsf_DN);
 
    fChain->SetBranchAddress("weight_lepsf2017", &weight_lepsf2017, &b_weight_lepsf2017);
    fChain->SetBranchAddress("weight_lepsf2017_UP", &weight_lepsf2017_UP, &b_weight_lepsf2017_UP);
@@ -1591,12 +1591,12 @@ void MT2Tree::Show(Long64_t entry)
    fChain->Show(entry);
 }
 
-Bool_t MT2Tree::passSelection(TString sel) const 
+Bool_t MT2Tree::passSelection(TString sel) const
 {
   if(sel=="zll" || sel=="singleLepton"){
-    return passBaseline(sel);
+    return passBaselineKinematic(sel);
   }else{
-  return passBaseline(sel) && passLeptonVeto() && passIsoTrackVeto();
+  return passBaselineKinematic(sel) && passLeptonVeto() && passIsoTrackVeto();
   }
 }
 
@@ -1609,7 +1609,7 @@ Bool_t MT2Tree::passIsoTrackVeto() const {
   return nPFLep5LowMT==0 && nPFHad10LowMT==0;
 }
 
-Bool_t MT2Tree::passFilters() const {
+Bool_t MT2Tree::passFilters2016() const {
 
   return nVert>0 && Flag_HBHENoiseFilter>0 && Flag_HBHENoiseIsoFilter>0 && Flag_globalTightHalo2016Filter>0 && Flag_EcalDeadCellTriggerPrimitiveFilter>0 && Flag_goodVertices>0 && Flag_eeBadScFilter>0 && Flag_badMuonFilterV2>0 && Flag_badChargedHadronFilterV2>0 ;
 
@@ -1634,48 +1634,48 @@ Bool_t MT2Tree::passMonoJetId( int j ) const {
   return jet_id[j]>=4;
 }
 
-Bool_t MT2Tree::passBaseline(TString sel) const 
+Bool_t MT2Tree::passBaselineKinematic(TString sel) const
 {
 
   if (sel=="gamma")
-    return nVert > 0 && 
+    return nVert > 0 &&
       gamma_nJet30 >= 1 &&
       gamma_nJet30FailId == 0 &&
-      gamma_deltaPhiMin > 0.3 && 
+      gamma_deltaPhiMin > 0.3 &&
       ( (gamma_nJet30 > 1 && gamma_ht<1000. && gamma_met_pt>250.) || (gamma_nJet30 > 1 && gamma_ht>=1000. && gamma_met_pt>30.) || (gamma_nJet30==1 && gamma_met_pt>250.)) &&
       gamma_diffMetMht < 0.5*gamma_met_pt;
   else if (sel=="zll")
     return nVert > 0 &&
       nJet30 >= 1 &&
       nJet30FailId == 0 &&
-      zll_deltaPhiMin > 0.3 && 
-      ( (nJet30>1 && zll_ht<1000. && zll_met_pt>250.) || (nJet30>1 && zll_ht>=1000. && zll_met_pt>30.) || (nJet30==1 && zll_met_pt>250.)) && 
-      zll_diffMetMht < 0.5*zll_met_pt && 
+      zll_deltaPhiMin > 0.3 &&
+      ( (nJet30>1 && zll_ht<1000. && zll_met_pt>250.) || (nJet30>1 && zll_ht>=1000. && zll_met_pt>30.) || (nJet30==1 && zll_met_pt>250.)) &&
+      zll_diffMetMht < 0.5*zll_met_pt &&
       nlep > 1 ;
   else if (sel=="qcd")
-    return nVert > 0 && 
+    return nVert > 0 &&
       nJet30FailId == 0 &&
-      met_pt>30. && 
+      met_pt>30. &&
       diffMetMht < 0.5*met_pt;
   else if (sel=="genmet")
-    return nVert > 0 && 
+    return nVert > 0 &&
       nJet30 >=1 &&
       nJet30FailId == 0 &&
-      deltaPhiMin_genmet > 0.3 && 
-      ( ( nJet30>1 && ht<1000. && met_genPt>250.) || ( nJet30>1 && ht>=1000. && met_genPt>30.) || (nJet30==1 && met_genPt>250.) ) && 
+      deltaPhiMin_genmet > 0.3 &&
+      ( ( nJet30>1 && ht<1000. && met_genPt>250.) || ( nJet30>1 && ht>=1000. && met_genPt>30.) || (nJet30==1 && met_genPt>250.) ) &&
       diffMetMht_genmet < 0.5*met_genPt;
-  //    return nVert > 0; 
+  //    return nVert > 0;
   else
-    return nVert > 0 && 
+    return nVert > 0 &&
       //////(nJet30 >= 2 || sel=="monojet") &&
       nJet30 >=1 &&
       nJet30FailId == 0 &&
-      deltaPhiMin > 0.3 && 
-      ( ( nJet30>1 && ht<1000. && met_pt>250.) || ( nJet30>1 && ht>=1000. && met_pt>30.) || (nJet30==1 && met_pt>250.) ) && 
-      //      ( (ht<1000. && met_pt>200.) || (ht>=1000. && met_pt>30.) || (nJet30==1 && met_pt>200.) ) && 
+      deltaPhiMin > 0.3 &&
+      ( ( nJet30>1 && ht<1000. && met_pt>250.) || ( nJet30>1 && ht>=1000. && met_pt>30.) || (nJet30==1 && met_pt>250.) ) &&
+      //      ( (ht<1000. && met_pt>200.) || (ht>=1000. && met_pt>30.) || (nJet30==1 && met_pt>200.) ) &&
       diffMetMht < 0.5*met_pt;
-  //    return nVert > 0; 
-  
+  //    return nVert > 0;
+
   return kFALSE;
 }
 
@@ -1688,7 +1688,7 @@ Bool_t MT2Tree::passGammaAdditionalSelection(int sampleId) const
 
   if( ngamma==0 ) return kFALSE;
   //if( gamma_pt[0]<180. ) return kFALSE;
-  //if( gamma_mt2<200. ) return kFALSE;     
+  //if( gamma_mt2<200. ) return kFALSE;
   //if( mt2>200. ) return kFALSE; // orthogonal to signal region
 
   bool isQCD  = sampleId>=100 && sampleId<200;

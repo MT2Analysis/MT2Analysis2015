@@ -24,6 +24,7 @@ MT2Config::MT2Config( const std::string& name ) {
   lumi_SinglePhoton_ = 0.;
   lumi_DoubleEG_ = 0.;
   lumi_DoubleMu_ = 0.;
+  year_ = 0;
 
   regionsSet_ = "";
   mcSamples_ = "";
@@ -74,6 +75,8 @@ MT2Config::MT2Config( const std::string& name ) {
       lumi_DoubleEG_ = atof(StringValue);
     else if( this_name=="lumi_DoubleMu" )
       lumi_DoubleMu_ = atof(StringValue);
+    else if( this_name=="year")
+      year_ = atoi(StringValue);
     else if( this_name=="regionsSet" )
       regionsSet_ = std::string(StringValue);
     else if( this_name=="mcSamples" )
@@ -193,16 +196,6 @@ std::string MT2Config::getEventYieldDir() const {
 
   std::string outputdir = "EventYields_" + name_;
   if( this->dummyAnalysis() ) outputdir += "_dummy";
-
-  //double intpart;
-  //double fracpart = modf(lumi_, &intpart);
-  //std::string suffix;
-  //if( fracpart>0. )
-  //  suffix = std::string( Form("%.0fp%.0ffb", intpart, 10.*fracpart ) );
-  //else
-  //  suffix = std::string( Form("%.0ffb", intpart ) );
-  //outputdir += suffix;
-
   return outputdir;
 
 }
@@ -239,6 +232,7 @@ void MT2Config::saveAs( const std::string& filename ) const {
   ofs << "lumi_SinglePhoton " <<   lumi_SinglePhoton_   << std::endl;
   ofs << "lumi_DoubleEG "     <<   lumi_DoubleEG_       << std::endl;
   ofs << "lumi_DoubleMu "     <<   lumi_DoubleMu_       << std::endl;
+  ofs << "year "     <<   year_       << std::endl;
 
   ofs << "regionsSet " << regionsSet_ << std::endl;
   if( mcSamples_!="" )       ofs << "mcSamples " << mcSamples_ << std::endl;

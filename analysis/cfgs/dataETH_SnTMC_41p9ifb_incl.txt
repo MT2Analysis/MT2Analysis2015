@@ -1,9 +1,11 @@
 lumi 41.86
+year 2017
+# year refers to the year to be applied on data 
 regionsSet 13TeV_2016_inclusive
 
 gammaTemplateRegions 13TeV_2016_inclusive
 crRegionsSet 13TeV_2016_inclusive
-qcdRegionsSet zurich2016_noMonojet
+qcdRegionsSet 13TeV_2016_inclusive  
 
 mcSamples Summer16_SnT_06Mar
 dataSamples Run2017_41p9ifb_TEST0
@@ -15,5 +17,3 @@ qcdMonoJetMCSamples Summer16_SnT_06Mar
 qcdMonoJetDataSamples Run2016_35p9ifb_06Mar_forMonoJet
 
 #additionalStuff noSignals
-#qcdMCSamples Spring16_SnT_Dec02
-#qcdDataSamples Run2016_12p9ifb_qcdSkim

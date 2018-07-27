@@ -1,3 +1,5 @@
+// Script to perform the estimates of the lostlepton control region
+
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -83,41 +85,40 @@ int main( int argc, char* argv[] ) {
       std::cout << "-> You passed a second argument that isn't 'data', nor 'MC', nor 'signal', so I don't know what to do about it." << std::endl;
     }
   }
-  
   std::string outputdir = cfg.getEventYieldDir() + "/llepControlRegion";
   system(Form("mkdir -p %s", outputdir.c_str()));
 
-  TH1::AddDirectory(kFALSE); // stupid ROOT memory allocation needs this  
+  TH1::AddDirectory(kFALSE); // stupid ROOT memory allocation needs this
 
   std::string regionsSet = cfg.regionsSet();
   std::cout << "Using region set: " << regionsSet << std::endl;
 
-  if( cfg.useMC() && !onlyData && !onlySignal ) { // use MC BG estimates 
-    
+  if( cfg.useMC() && !onlyData && !onlySignal ) { // use MC BG estimates
+
     std::string samplesFileName = "../samples/samples_" + cfg.mcSamples() + ".dat";
     std::cout << std::endl << std::endl;
     std::cout << "-> Loading samples from file: " << samplesFileName << std::endl;
-    
+
     std::vector<MT2Sample> fSamples = MT2Sample::loadSamples(samplesFileName, 300, 599); // only top (tt, t, ttW, ttZ) and W+jets
     if( fSamples.size()==0 ) {
       std::cout << "There must be an error: samples is empty!" << std::endl;
       exit(1209);
     }
-    
-    MT2Analysis<MT2EstimateTree>* llepCR = new MT2Analysis<MT2EstimateTree> ( "llepCR", regionsSet );  
-      
+
+    MT2Analysis<MT2EstimateTree>* llepCR = new MT2Analysis<MT2EstimateTree> ( "llepCR", regionsSet );
+
     for( unsigned i=0; i < fSamples.size(); ++i )
       computeYield( fSamples[i], cfg, llepCR );
-    
+
     llepCR->writeToFile( outputdir + "/mc.root" );
-    
+
     if( cfg.dummyAnalysis() ) {
-      
+
       // emulate data:
       roundLikeData(llepCR);
-      
+
       llepCR->writeToFile( outputdir + "/data.root" );
-      
+
     }
   }
 
@@ -139,8 +140,8 @@ int main( int argc, char* argv[] ) {
       std::cout << "No signal samples found, skipping." << std::endl;
 
     } else {
-    
-      for( unsigned i=0; i<fSamples.size(); ++i ) 
+
+      for( unsigned i=0; i<fSamples.size(); ++i )
         signals.push_back( computeSigYield<MT2EstimateAllSigSyst>( fSamples[i], cfg ) );
 
       if( signals.size()>0 ){
@@ -149,11 +150,11 @@ int main( int argc, char* argv[] ) {
 	for( unsigned i=1; i<signals.size(); ++i )
 	  signals[i]->writeToFile( outputdir + "/mc.root" );
       }
-      
+
     } // if samples != 0
 
   } // if mc samples
-  
+
   else if ( cfg.sigSamples()!="" && !onlyData ) {
 
     std::string samplesFileName = "../samples/samples_" + cfg.sigSamples() + ".dat";
@@ -178,9 +179,9 @@ int main( int argc, char* argv[] ) {
       }
 
     } // if samples != 0
-    
+
   } // if sig samples
-  
+
 
   if( !(cfg.dummyAnalysis()) && cfg.dataSamples()!="" && !onlyMC && !onlySignal) {
 
@@ -189,7 +190,7 @@ int main( int argc, char* argv[] ) {
     std::cout << std::endl << std::endl;
     std::cout << "-> Loading data from file: " << samplesFile_data << std::endl;
 
-    std::vector<MT2Sample> samples_data = MT2Sample::loadSamples(samplesFile_data, "" ); 
+    std::vector<MT2Sample> samples_data = MT2Sample::loadSamples(samplesFile_data, "" );
     // M.G. any file in the list
     // std::vector<MT2Sample> samples_data = MT2Sample::loadSamples(samplesFile_data, "merged" );
     if( samples_data.size()==0 ) {
@@ -197,9 +198,9 @@ int main( int argc, char* argv[] ) {
       exit(1209);
     }
 
-    
+
     TH1::AddDirectory(kFALSE); // stupid ROOT memory allocation needs this
-  
+
     MT2Analysis<MT2EstimateTree>* dataCR = new MT2Analysis<MT2EstimateTree> ( "llepCR", regionsSet );
 
     for( unsigned i=0; i < samples_data.size(); ++i )
@@ -211,7 +212,7 @@ int main( int argc, char* argv[] ) {
 
 
   return 0;
-  
+
 }
 
 
@@ -223,55 +224,58 @@ void computeYield( const MT2Sample& sample, const MT2Config& cfg, MT2Analysis<MT
 
   TFile* file = TFile::Open(sample.file.c_str());
   TTree* tree = (TTree*)file->Get("mt2");
-  
+
   MT2Tree myTree;
   myTree.Init(tree);
 
   std::string regionsSet = cfg.regionsSet();
   std::cout << "Using region set: " << regionsSet << std::endl;
-  
+
   int nentries = tree->GetEntries();
-    
+
   for( int iEntry=0; iEntry<nentries; ++iEntry ) {
 
     if( iEntry % 50000 == 0 ) std::cout << "    Entry: " << iEntry << " / " << nentries << std::endl;
     myTree.GetEntry(iEntry);
 
-    //if( myTree.isData && !myTree.isGolden ) continue;
+    // Do the selection here: please try to keep a consistent order
+    // between this script and similar scripts
+    if( myTree.isData && !myTree.isGolden ) continue;
+
     if( myTree.isData ) {
+      if(cfg.year() == 2016) if( !myTree.passFilters2016() ) continue;
+      if(cfg.year() == 2017) if( !myTree.passFilters2017() ) continue;
+    } //else if( !myTree.passFiltersMC() ) continue;
+    // TODO: make sure that myTree.passFiltersMC is correct for the different years
 
-      // MG commented for 2017 data 
-      // TODO: add a flag "year" to make the switch 
-      //if( !myTree.passFilters() ) continue;
-      if( !myTree.passFilters2017() ) continue;
+    if (myTree.isData) {
+      if (cfg.year() == 2017) if ( !(myTree.HLT_PFMET120_PFMHT120 || myTree.HLT_PFHT900 || myTree.HLT_PFHT300_PFMET110 || myTree.HLT_PFJet450 || myTree.HLT_PFMETNoMu120_PFMHTNoMu120 ) ) continue;
+      if(cfg.year() == 2017) if ( !(myTree.HLT_PFMET120_PFMHT120 || myTree.HLT_PFHT1050 || myTree.HLT_PFHT500_PFMET100_PFMHT100 || myTree.HLT_PFJet500 || myTree.HLT_PFMETNoMu120_PFMHTNoMu120 || myTree.HLT_PFMETNoMu120_PFMHTNoMu120_PFHT60 ) ) continue;
+    }
 
-    }else
-      if( !myTree.passFiltersMC() ) continue;
-
-    if( !myTree.passBaseline() ) continue;
-    if( myTree.nLepLowMT==1 ) ; // For lost lepton CR
-    else continue;
-    
+    // some additional cleanings
+    if( myTree.nJet200MuFrac50DphiMet > 0 ) continue; // new RA2 filter
+    if( myTree.met_miniaodPt/myTree.met_caloPt > 5.0 ) continue;
+    //crazy events! To be piped into a separate txt file
+    if(myTree.jet_pt[0] > 13000){
+      std::cout << "Rejecting weird event at run:lumi:evt = " << myTree.run << ":" << myTree.lumi << ":" << myTree.evt << std::endl;
+      continue;
+    }
+    //check if is there is a nan
+    if( isnan(myTree.ht) || isnan(myTree.met_pt) ||  isinf(myTree.ht) || isinf(myTree.met_pt)  ){
+      std::cout << "Rejecting nan/inf event at run:lumi:evt = " << myTree.run << ":" << myTree.lumi << ":" << myTree.evt << std::endl;
+      continue;
+    }
+    // main kinematic selections here
+    if( !myTree.passBaselineKinematic() ) continue;
+    // monojet id
     if ( myTree.nJet30==1 && !myTree.passMonoJetId(0) ) continue;
+    // specific analysis region cuts
+    if( myTree.nLepLowMT!=1 ) continue;
 
-    int njets  = myTree.nJet30;
-    int nbjets = myTree.nBJet20; 
-    //    float ht   = myTree.ht;
-    float ht   = (njets>1) ? myTree.ht : myTree.jet1_pt;
-    //    float met  = myTree.met_pt;
-    float mt2  = (njets>1) ? myTree.mt2 : ht;
-    float minMTBmet = myTree.minMTBMet;
-    
-    //    int nMuons10 = myTree.nMuons10;
-    //    int nElectrons10 = myTree.nElectrons10;
-    //    int nPFLep5LowMT = myTree.nPFLep5LowMT;
-    //    int nPFHad10LowMT = myTree.nPFHad10LowMT;
-    
+
+    // Selection is over, now apply the weights !
     Double_t weight = (myTree.isData) ? 1. : myTree.evt_scale1fb;//*cfg.lumi();
-    // if(!myTree.isData) {
-    //   weight *= myTree.weight_btagsf;
-    //   weight *= myTree.weight_lepsf;
-    // }
 
     if( !myTree.isData ){
       weight *= myTree.weight_btagsf;
@@ -286,92 +290,62 @@ void computeYield( const MT2Sample& sample, const MT2Config& cfg, MT2Analysis<MT
       ///AMERICAN WAY
       if (myTree.evt_id == 301 || myTree.evt_id == 302)
       	weight *= myTree.weight_isr/0.909; // nominal
-      else if (myTree.evt_id == 303) 
+      else if (myTree.evt_id == 303)
       	weight *= myTree.weight_isr/0.895;
 
     }
 
-    if (myTree.isData) {
+    // Now that you have done the pre-selection
+    // you can actually make the estimates
+    // define here the variables that will enter the region categorization
 
-      //MG 2016 expression 
-      // TODO: do the switch according to "year"
-      //if ( !(myTree.HLT_PFMET120_PFMHT120 || myTree.HLT_PFHT900 || myTree.HLT_PFHT300_PFMET110 || myTree.HLT_PFJet450  
-      //    || myTree.HLT_PFMETNoMu120_PFMHTNoMu120 ) ) continue;
-      if ( !(myTree.HLT_PFMET120_PFMHT120 || myTree.HLT_PFHT1050 || myTree.HLT_PFHT500_PFMET100_PFMHT100 || myTree.HLT_PFJet500 
-          || myTree.HLT_PFMETNoMu120_PFMHTNoMu120 || myTree.HLT_PFMETNoMu120_PFMHTNoMu120_PFHT60 ) ) continue;
-
-      //      if ( !(myTree.HLT_PFMET100_PFMHT100 || myTree.HLT_PFHT800 || myTree.HLT_PFHT300_PFMET100) ) continue; //ICHEP 2016
-      //OLD if( !(myTree.HLT_PFMETNoMu90_PFMHTNoMu90 || myTree.HLT_PFHT350_PFMET100 || myTree.HLT_PFHT800) ) continue;
-
-    } // if is data
-
-
-    if( myTree.nJet200MuFrac50DphiMet > 0 ) continue; // new RA2 filter
-
-    if( myTree.met_miniaodPt/myTree.met_caloPt > 5.0 ) continue;
-
-    //crazy events! To be piped into a separate txt file
-    if(myTree.jet_pt[0] > 13000){
-      std::cout << "Rejecting weird event at run:lumi:evt = " << myTree.run << ":" << myTree.lumi << ":" << myTree.evt << std::endl;
-      continue;
-    }
-    //NEW check if is there is a nan
-    if( isnan(myTree.ht) || isnan(myTree.met_pt) ||  isinf(myTree.ht) || isinf(myTree.met_pt)  ){
-      std::cout << "Rejecting nan/inf event at run:lumi:evt = " << myTree.run << ":" << myTree.lumi << ":" << myTree.evt << std::endl;
-      continue;
-    }
+    int njets  = myTree.nJet30;
+    int nbjets = myTree.nBJet20;
+    float ht   = (njets>1) ? myTree.ht : myTree.jet1_pt;
+    float mt2  = (njets>1) ? myTree.mt2 : ht;
+    float minMTBmet = myTree.minMTBMet;
 
     MT2EstimateTree* thisEstimate;
 
     if( regionsSet=="zurich" || regionsSet=="zurichPlus" || regionsSet=="zurich2016" ){ // To avoid signal contamination in 7j 2b and 7j 3b
-    //    if( false ){ // To avoid signal contamination in 7j 2b and 7j 3b
-      
       if( ht>450. && njets>=7 && nbjets>2 ) continue;
-      
       else if( ht<450 || njets<7 || nbjets<1 ) {
-	
 	thisEstimate = anaTree->get( ht, njets, nbjets, minMTBmet, mt2 );
 	if( thisEstimate==0 ) continue;
-	
+
 	thisEstimate->assignTree( myTree, weight );
 	thisEstimate->tree->Fill();
 	thisEstimate->yield->Fill(mt2, weight );
-	
       }
       else {
-	
 	thisEstimate = anaTree->get( ht, njets, 1, minMTBmet, mt2 );
 	if( thisEstimate==0 ) continue;
 	thisEstimate->assignTree( myTree, weight );
 	thisEstimate->tree->Fill();
 	thisEstimate->yield->Fill(mt2, weight );
-	
+
 	thisEstimate = anaTree->get( ht, njets, 2, minMTBmet, mt2 );
 	if( thisEstimate==0 ) continue;
 	thisEstimate->assignTree( myTree, weight );
 	thisEstimate->tree->Fill();
 	thisEstimate->yield->Fill(mt2, weight );
-	
+
 	thisEstimate = anaTree->get( ht, njets, 3, minMTBmet, mt2 );
 	if( thisEstimate==0 ) continue;
 	thisEstimate->assignTree( myTree, weight );
 	thisEstimate->tree->Fill();
 	thisEstimate->yield->Fill(mt2, weight );
-	
       }
-    
     }
     else {
-
 	thisEstimate = anaTree->get( ht, njets, nbjets, minMTBmet, mt2 );
 	if( thisEstimate==0 ) continue;
-	
+
 	thisEstimate->assignTree( myTree, weight );
 	thisEstimate->tree->Fill();
 	thisEstimate->yield->Fill(mt2, weight );
-
     }
-    
+
 
   } // for entries
 
@@ -384,7 +358,7 @@ void computeYield( const MT2Sample& sample, const MT2Config& cfg, MT2Analysis<MT
 
 }
 
-
+// TO DO: streamline computeSigYield similarly as computeYield
 template <class T>
 MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg ) {
 
@@ -413,38 +387,38 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
   std::cout << "-> Getting mt2 tree from file: " << sample.file << std::endl;
 
   TTree* tree = (TTree*)file->Get("mt2");
-  
+
   MT2Tree myTree;
   myTree.Init(tree);
 
 
   std::cout << "-> Setting up MT2Analysis with name: " << sample.sname << std::endl;
   MT2Analysis<T>* analysis = new MT2Analysis<T>( sample.sname, regionsSet, sample.id );
- 
+
   int nentries = tree->GetEntries();
-  
+
   for( int iEntry=0; iEntry<nentries; ++iEntry ) {
-    
+
     if( iEntry % 50000 == 0 ) std::cout << "    Entry: " << iEntry << " / " << nentries << std::endl;
-    
+
     myTree.GetEntry(iEntry);
-    
+
     bool passGenMET = false;
     if(dogenmet)
       passGenMET = true;
 
     bool passRecoMET=true;
 
-    if( !myTree.passBaseline() ) passRecoMET=false;
+    if( !myTree.passBaselineKinematic() ) passRecoMET=false;
 
     if(dogenmet)
-      if( !myTree.passBaseline("genmet") ) passGenMET=false;
+      if( !myTree.passBaselineKinematic("genmet") ) passGenMET=false;
 
     if (!passGenMET && !passRecoMET) continue;
- 
-    if( myTree.nLepLowMT==1 ); 
+
+    if( myTree.nLepLowMT==1 );
     else continue;
-    
+
     if ( myTree.nJet30==1 && !myTree.passMonoJetId(0) ) continue;
     if ( myTree.nJet20BadFastsim > 0 ) continue;
 
@@ -459,7 +433,7 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
     float mt2_genmet;
     if(dogenmet)
       mt2_genmet = (njets>1) ? myTree.mt2_genmet : ht;
-    
+
     int GenSusyMScan1=0;
     int GenSusyMScan2=0;
     if(  myTree.evt_id > 999){
@@ -490,22 +464,22 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
       }
 
     }
- 
+
     //Double_t weight = (myTree.isData) ? 1. : myTree.evt_scale1fb*cfg.lumi()*myTree.puWeight;
     Double_t weight = (myTree.isData) ? 1. : myTree.evt_scale1fb;//*cfg.lumi();
     //Double_t weight = (myTree.isData) ? 1. : myTree.evt_scale1fb*cfg.lumi();
     Double_t weight_syst = 1.;
 
-    /////    weight = 1000.* myTree.evt_xsec/nentries; //Exceptionally for signal from muricans 
+    /////    weight = 1000.* myTree.evt_xsec/nentries; //Exceptionally for signal from muricans
 
     if( !myTree.isData ){
       weight *= myTree.weight_btagsf;
       weight *= myTree.weight_lepsf2017;
-   
+
       if (myTree.evt_id == 301 || myTree.evt_id == 302)
 	weight *= myTree.weight_isr/0.909; // central/average
-      else if (myTree.evt_id == 303) 
-	weight *= myTree.weight_isr/0.895;  
+      else if (myTree.evt_id == 303)
+	weight *= myTree.weight_isr/0.895;
     }
 
     float sig_xs=0.;
@@ -522,31 +496,31 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
     T* thisEstimate = analysis->get( ht, njets, nbjets, minMTBmet, 201. );
     if( thisEstimate==0 ) continue;
 
-    if( regionsSet=="zurich" || regionsSet=="zurichPlus" || regionsSet=="zurich2016" ){ // To avoid signal contamination in 7j 2b and 7j 3b                                                                                
+    if( regionsSet=="zurich" || regionsSet=="zurichPlus" || regionsSet=="zurich2016" ){ // To avoid signal contamination in 7j 2b and 7j 3b
 
       if( ht>450 && njets>=7 && nbjets>2 ) continue;
 
       else if( ht<450 || njets<7 || nbjets<1) {
-	
+
 	if(passRecoMET){
 
 	  thisEstimate  = analysis->get( ht, njets, nbjets, minMTBmet, mt2 );
 	  if( thisEstimate==0 ) continue;
-		  
+
 	  thisEstimate->yield->Fill( mt2, weight );
 	  thisEstimate->yield3d->Fill( mt2, GenSusyMScan1, GenSusyMScan2, weight );
-	  
+
 	}
-	
+
 	if(dogenmet && passGenMET){
 
 	  thisEstimate  = analysis->get( ht, njets, nbjets, minMTBmet, mt2_genmet );
 	  if( thisEstimate==0 ) continue;
-		  	  
+
 	  thisEstimate->yield3d_genmet->Fill( mt2_genmet, GenSusyMScan1, GenSusyMScan2, weight );
-	  
+
 	}
-    
+
       }
       else {
 
@@ -554,17 +528,17 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
 
 	  thisEstimate  = analysis->get( ht, njets, 1, minMTBmet, mt2 );
 	  if( thisEstimate==0 ) continue;
-	
+
           thisEstimate->yield->Fill( mt2, weight );
           thisEstimate->yield3d->Fill( mt2, GenSusyMScan1, GenSusyMScan2, weight );
 
         }
-	
+
         if(dogenmet && passGenMET){
 
 	  thisEstimate  = analysis->get( ht, njets, 1, minMTBmet, mt2_genmet );
 	  if( thisEstimate==0 ) continue;
-	
+
           thisEstimate->yield3d_genmet->Fill( mt2_genmet, GenSusyMScan1, GenSusyMScan2, weight );
 
         }
@@ -587,7 +561,7 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
           thisEstimate->yield3d_genmet->Fill( mt2_genmet, GenSusyMScan1, GenSusyMScan2, weight );
 
         }
-	
+
         if(passRecoMET){
 
 	  thisEstimate  = analysis->get( ht, njets, 3, minMTBmet, mt2 );
@@ -607,18 +581,18 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
 
         }
 
-	
+
       }
 
     }
     else {
 
-      
+
       if(passRecoMET){
 
 	thisEstimate  = analysis->get( ht, njets, nbjets, minMTBmet, mt2 );
 	if( thisEstimate==0 ) continue;
-      
+
 	thisEstimate->yield->Fill( mt2, weight );
 	thisEstimate->yield3d->Fill( mt2, GenSusyMScan1, GenSusyMScan2, weight );
 
@@ -628,11 +602,11 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
 
 	thisEstimate  = analysis->get( ht, njets, nbjets, minMTBmet, mt2_genmet );
 	if( thisEstimate==0 ) continue;
-      
+
 	thisEstimate->yield3d_genmet->Fill( mt2_genmet, GenSusyMScan1, GenSusyMScan2, weight );
 
       }
-      
+
     }
 
   } // for entries
@@ -652,7 +626,7 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
 
 
 void roundLikeData( MT2Analysis<MT2EstimateTree>* data ) {
-  
+
    std::set<MT2Region> regions = data->getRegions();
 
    for( std::set<MT2Region>::iterator iR = regions.begin(); iR!=regions.end(); ++iR ) {
@@ -664,9 +638,9 @@ void roundLikeData( MT2Analysis<MT2EstimateTree>* data ) {
        float yield = thisYield->GetBinContent(iBin);
        thisYield->SetBinContent(iBin, roundD(yield));
        thisYield->SetBinError(iBin, 0. );
-       
+
      } // for bins
-     
+
    } // for regions
 
 }
