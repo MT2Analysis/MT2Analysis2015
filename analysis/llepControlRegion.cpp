@@ -455,44 +455,52 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
     int GenSusyMScan2=0;
     if(  myTree.evt_id > 999){
 
-      if(sigSampleName.Contains("T2qq")){
+     //SNT WAY
+      GenSusyMScan1 = myTree.GenSusyMScan1;
+      GenSusyMScan2 = myTree.GenSusyMScan2;
 
-        GenSusyMScan1 = myTree.GenSusyMSquark;
-        GenSusyMScan2 = myTree.GenSusyMNeutralino;
+      // if(sigSampleName.Contains("T2qq")){
 
-      }
-      else if(sigSampleName.Contains("T2bb")){
+      //   GenSusyMScan1 = myTree.GenSusyMSquark;
+      //   GenSusyMScan2 = myTree.GenSusyMNeutralino;
 
-        GenSusyMScan1 = myTree.GenSusyMSbottom;
-        GenSusyMScan2 = myTree.GenSusyMNeutralino;
+      // }
+      // else if(sigSampleName.Contains("T2bb")){
 
-      }
-      else if(sigSampleName.Contains("T2tt")){
+      //   GenSusyMScan1 = myTree.GenSusyMSbottom;
+      //   GenSusyMScan2 = myTree.GenSusyMNeutralino;
 
-        GenSusyMScan1 = myTree.GenSusyMStop;
-        GenSusyMScan2 = myTree.GenSusyMNeutralino;
+      // }
+      // else if(sigSampleName.Contains("T2tt")){
 
-      }
-      else{
+      //   GenSusyMScan1 = myTree.GenSusyMStop;
+      //   GenSusyMScan2 = myTree.GenSusyMNeutralino;
 
-	GenSusyMScan1 = myTree.GenSusyMGluino;
-	GenSusyMScan2 = myTree.GenSusyMNeutralino;
+      // }
+      // else{
 
-      }
+      // 	GenSusyMScan1 = myTree.GenSusyMGluino;
+      // 	GenSusyMScan2 = myTree.GenSusyMNeutralino;
+      // }
 
     }
  
     //Double_t weight = (myTree.isData) ? 1. : myTree.evt_scale1fb*cfg.lumi()*myTree.puWeight;
-    Double_t weight = (myTree.isData) ? 1. : myTree.evt_scale1fb;//*cfg.lumi();
+
+    //SnT way, they don't have the variable "evt_scale1fb"
+    Double_t weight = (myTree.isData || myTree.evt_id>1000 ) ? 1. : myTree.evt_scale1fb;//*cfg.lumi();
+    //    Double_t weight = (myTree.isData) ? 1. : myTree.evt_scale1fb;//*cfg.lumi();
     //Double_t weight = (myTree.isData) ? 1. : myTree.evt_scale1fb*cfg.lumi();
     Double_t weight_syst = 1.;
 
     /////    weight = 1000.* myTree.evt_xsec/nentries; //Exceptionally for signal from muricans 
 
     if( !myTree.isData ){
+
       weight *= myTree.weight_btagsf;
-      weight *= myTree.weight_lepsf2017;
-   
+      weight *= myTree.weight_lepsf;
+      //      weight *= myTree.weight_lepsf2017;
+
       if (myTree.evt_id == 301 || myTree.evt_id == 302)
 	weight *= myTree.weight_isr/0.909; // central/average
       else if (myTree.evt_id == 303) 
@@ -505,7 +513,6 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
       int thisBinX = sigXS->FindBin( GenSusyMScan1 );
 
       sig_xs = sigXS->GetBinContent(thisBinX);
-
       weight *= sig_xs;
 
     }
