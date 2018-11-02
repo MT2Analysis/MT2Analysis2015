@@ -349,9 +349,9 @@ int main( int argc, char* argv[] ) {
   //  signals[i]->writeToFile(outputdir + "/analyses.root");
   }
   else if( signals.size()>0 ){
-    //    signals[0]->writeToFile(outputdir + "/analyses.root");
-    //    for( unsigned i=1; i<signals.size(); ++i )
-    //    signals[i]->writeToFile(outputdir + "/analyses.root");
+    signals[0]->writeToFile(outputdir + "/analyses.root");
+    for( unsigned i=1; i<signals.size(); ++i )
+      signals[i]->writeToFile(outputdir + "/analyses.root");
   }
 
   // signalYield->writeToFile(outputdir + "/analyses.root");
@@ -425,7 +425,8 @@ MT2Analysis<T>* computeYield( const MT2Sample& sample, const MT2Config& cfg, std
   
   int nentries = tree->GetEntries();
   
-  for( int iEntry=0; iEntry<nentries; ++iEntry ) {
+  for( int iEntry=0; iEntry<1000; ++iEntry ) {
+    //  for( int iEntry=0; iEntry<nentries; ++iEntry ) {
     
     if( iEntry % 50000 == 0 ) std::cout << "    Entry: " << iEntry << " / " << nentries << std::endl;
     
@@ -741,7 +742,6 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
       if (!passGenMET && !passRecoMET) continue;
 
     }
-      
 
     if( myTree.nJet30==1 && !myTree.passMonoJetId(0) ) continue;
     if( myTree.nJet20BadFastsim > 0 ) continue;
@@ -760,9 +760,13 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
     if(dogenmet)
       mt2_genmet = (njets>1) ? myTree.mt2_genmet : ht;
 
-    float weight_isr = myTree.weight_isr    / myTree.weight_isr_av;
-    float isr_UP     = myTree.weight_isr_UP / myTree.weight_isr_UP_av;
-    float isr_DN     = myTree.weight_isr_DN / myTree.weight_isr_DN_av;
+    float weight_isr = myTree.weight_isr;
+    float isr_UP     = myTree.weight_isr_UP;
+    float isr_DN     = myTree.weight_isr_DN;
+
+    // float weight_isr = myTree.weight_isr    / myTree.weight_isr_av;
+    // float isr_UP     = myTree.weight_isr_UP / myTree.weight_isr_UP_av;
+    // float isr_DN     = myTree.weight_isr_DN / myTree.weight_isr_DN_av;
 
     float weight_lepsf = myTree.weight_lepsf;
     float lepsf_UP     = myTree.weight_lepsf_UP;
@@ -813,7 +817,7 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
       GenSusyMScan1 = myTree.GenSusyMScan1;
       GenSusyMScan2 = myTree.GenSusyMScan2;
       
-      //    std::cout << "Masses are " << GenSusyMScan1 << " and " << GenSusyMScan2 << std::endl;
+      //      std::cout << "Masses are " << GenSusyMScan1 << " and " << GenSusyMScan2 << std::endl;
 
     }
  
@@ -830,10 +834,10 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
 
     //weight = 1000./nentries*cfg.lumi(); //Exceptionally for signal from muricans 
 
-
     int binx = h_avg_weight_isr->GetXaxis()->FindBin( GenSusyMScan1 );
     int biny = h_avg_weight_isr->GetYaxis()->FindBin( GenSusyMScan2 );
 
+    float weight_isr_av = h_avg_weight_isr->GetBinContent( binx, biny );
 
     float weight_isr_geq20 = h_avg_weight_isrNVtxGeq20->GetBinContent( binx, biny );
     float weight_isr_l20 = h_avg_weight_isrNVtxL20->GetBinContent( binx, biny );
@@ -841,17 +845,15 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
     float weight_btag_geq20 = h_avg_weight_btagsfNVtxGeq20->GetBinContent( binx, biny );
     float weight_btag_l20 = h_avg_weight_btagsfNVtxL20->GetBinContent( binx, biny );
 
-
-
     if( !myTree.isData ){
       
       weight *= weight_btagsf;
       weight *= weight_lepsf;
-      weight *= weight_isr ;
+      weight *= weight_isr/weight_isr_av ;
 
-
+      // std::cout << "isr = " <<  weight_isr  << "isr av = " <<  weight_isr_av << " lepsf " << weight_lepsf  << " btag " << weight_btagsf << std::endl;
       // std::cout << "isr geq20 = " <<  weight_isr_geq20 << " l20 = " << weight_isr_l20 << std::endl;
-      //std::cout << "btag geq20 = " <<  weight_btag_geq20 << " l20 = " << weight_btag_l20 << std::endl;
+      // std::cout << "btag geq20 = " <<  weight_btag_geq20 << " l20 = " << weight_btag_l20 << std::endl;
 
       weight_geq20 *= myTree.weight_btagsf / weight_btag_geq20;
       //weight_geq20 *= myTree.weight_lepsf;
@@ -862,7 +864,6 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
       weight_l20 *= myTree.weight_isr / weight_isr_l20;
 
     }
-
  
 //    if( myTree.evt_id > 1000 )
 //      weight_syst = myTree.weight_isr;
@@ -876,9 +877,7 @@ MT2Analysis<T>* computeSigYield( const MT2Sample& sample, const MT2Config& cfg )
       sig_xs = sigXS->GetBinContent(thisBinX);
       // std::cout << " sig_xs " << sig_xs << std::endl;
       weight *= sig_xs;
-   
     }
-    
 
     T* thisEstimate = analysis->get( ht, njets, nbjets, minMTBmet, mt2 );
     if( thisEstimate==0 ) continue;
