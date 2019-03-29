@@ -77,9 +77,10 @@ int main( int argc, char* argv[] ) {
   std::cout << "----------------------------------------------------" << std::endl;
   std::cout << std::endl << std::endl;
 
+  std::cout << "argc = " << argc;
 
   if( argc<2 ) {
-    std::cout << "USAGE: ./fitDeltaPhiQCD [configFileName] [data/MC] [closureTest=false]" << std::endl;
+    std::cout << "USAGE: ./computeQCDFromDeltaPhi [configFileName] [data/MC] [closureTest=false]" << std::endl;
     std::cout << "Exiting." << std::endl;
     exit(11);
   }
