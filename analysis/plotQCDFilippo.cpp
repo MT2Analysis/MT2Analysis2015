@@ -26,8 +26,9 @@
 
 
 void do_fit(float ht_min, float ht_max, int n_bins, TTree* tree);
-
 double ratio(float ht_min, float ht_max, float mt2_low, float mt2_high, float threshold, TTree* tree);
+//double pow_bg(double mt2, double *param);
+
 
 int main( int argc, char* argv[] ) {
     
@@ -40,7 +41,6 @@ int main( int argc, char* argv[] ) {
   std::string dataFileName(argv[1]);
   std::cout<< "dataFileName "<< dataFileName << std::endl;
 
-    
   //load data and extract tree
   std::string dataPath("EventYields_dataETH_SnTMC_35p9ifb/qcdControlRegion/");
   dataPath = dataPath + dataFileName;
@@ -53,13 +53,14 @@ int main( int argc, char* argv[] ) {
 
 
   //now first experiment with first ht region and 60<mt2<100
-  std::cout << "Try with first region: 250MeV < ht < 450MeV, 60MeV < mt2 < 100MeV" << std::endl;
+  /* std::cout << "Try with first region: 250MeV < ht < 450MeV, 60MeV < mt2 < 100MeV" << std::endl;
   tree->Draw("deltaPhiMin", "ht<450 && ht>250 && mt2>60 && mt2<100");
   //TBranch* DeltaPhiMin = tree->GetBranch("DeltaPhiMin"); 
   
   std::cout << "r_phi (first region)  = "<< ratio(250.0, 450.0, 60.0, 100.0, 0.3, tree) << std::endl;
   c1->SaveAs("plotFilippo/provaqcd.pdf");
- 
+  */
+
   do_fit(250.0, 450.0, 8, tree);
   
   delete c1;
@@ -68,6 +69,10 @@ int main( int argc, char* argv[] ) {
 }
 
 
+/*double pow_bg(double mt2, double *param){
+    //fitting function for qcd background
+    return param[0]*pow(mt2,param[1]);
+};*/
 
 double ratio(float ht_min, float ht_max, float mt2_low, float mt2_high, float threshold, TTree* tree){
   //Define conditions for events in given phasespace above/below threshold
@@ -103,14 +108,42 @@ void do_fit(float ht_min, float ht_max, int n_bins, TTree* tree){
   double mt2_min = 60.0; double mt2_max = 100.0;
   double interval_mt2 = (mt2_max - mt2_min)/n_bins;
   
-  double mt2_s [n_bins]; double rphi_s [n_bins];
+  double mt2_s [n_bins]; 
   
+  //trovare nome carino per istogramma
+  TH1D* histo = new TH1D("histo", "fit", n_bins, mt2_min, mt2_max); 
+   
   //compute r_phi ratio for every bin:
   for (int i=0; i<n_bins; ++i){
       mt2_s[i] = mt2_min + (double)i*interval_mt2;
-      rphi_s[i] = ratio(ht_min, ht_max, mt2_s[i], mt2_s[i] + interval_mt2, delta_Phi_threshold, tree); 
-      std::cout << mt2_s[i] << "GeV < mt2 < " << mt2_s[i] + interval_mt2 << " GeV : r_phi = " << rphi_s[i] << std::endl;
+      double* rphi = new double;
+      *rphi = ratio(ht_min, ht_max, mt2_s[i], mt2_s[i] + interval_mt2, delta_Phi_threshold, tree); 
+      histo->SetBinContent(i+1, *rphi);
+      //std::cout << mt2_s[i] << "GeV < mt2 < " << mt2_s[i] + interval_mt2 << " GeV : r_phi = " << histo->GetBinContent(i) << std::endl;
+      std::cout << mt2_s[i] << "GeV < mt2 < " << mt2_s[i] + interval_mt2 << " GeV : r_phi = " << *rphi << std::endl;
+      delete rphi;
       }
+ 
+  TF1 *pow_bg = new TF1("pow_bg", "[0]*pow(x,[1])", mt2_min, mt2_max);
+  histo->Fit("pow_bg");
+ 
+  TCanvas* cfit = new TCanvas("cfit","Fit with power law"); 
+  gPad->SetLogx(); 
+  gPad->SetLogy();
+  histo->GetXaxis()->SetTitle("MT2");  
+  histo->GetYaxis()->SetTitle("r_{#phi}");
+  histo->LabelsOption("h","Y"); //IN QUALCHE MODO IL LABEL E' SEMPRE STORTO
+  histo->Draw(); //	CAPIRE COME USARE UNO STILE COME NEL FIT DI MASCIOVECCHIO
+  cfit->SaveAs("plotFilippo/provafit.pdf");
+  
+  //CALCOLARE IL RATIO ANCHE PER REGIONI FUORI DA 60-100
+  //CAPIRE PERCHE' ERRORE COSI' GRANDE SUI PARAMETRI
+  //COPIARE STILE DA CODICE MASCIOVECCHIO
+  //PLOTTARE TUTTO, INCLUSA FUNZIONE FITTATA SOPRA, PLOTTATA SU TUTTO IL RANGE DI MT2
+  //SCRIVERE NEL PLOT I PARAMETRI OTTENUTI? IN OGNI CASO CAPIRE E SCRIVERE IL CHI2/NDF   
+  delete cfit;
+  delete histo;
+  delete pow_bg;
 };
 
 
