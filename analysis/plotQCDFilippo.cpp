@@ -64,11 +64,11 @@ double ratio(float ht_min, float ht_max, float mt2_low, float mt2_high, float th
   //Define conditions for events in given phasespace above/below threshold
   //I need strings which depend on parameters, so I use ostringstream
   std::ostringstream oss_big;
-  oss_big << "ht<" << ht_max << " && ht>" << ht_min << " && mt2>" << mt2_low << " && mt2<" << mt2_high << " && deltaPhiMin>" << threshold;
+  oss_big << "150< id && id<160 &&" << "ht<" << ht_max << " && ht>" << ht_min << " && mt2>" << mt2_low << " && mt2<" << mt2_high << " && deltaPhiMin>" << threshold;
   std::string cond_big = oss_big.str();
 
   std::ostringstream oss_small;
-  oss_small << "ht<" << ht_max << " && ht>" << ht_min << " && mt2>" << mt2_low << " && mt2<" << mt2_high << " && deltaPhiMin<" << threshold;
+  oss_small << "150< id && id<160 && "<< "ht<" << ht_max << " && ht>" << ht_min << " && mt2>" << mt2_low << " && mt2<" << mt2_high << " && deltaPhiMin<" << threshold;
   std::string cond_small = oss_small.str();
   
   //Find number of entries above and below threshold in the given phasespace region
