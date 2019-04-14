@@ -14,7 +14,7 @@
 #include "TVirtualFitter.h"
 #include "TLegend.h"
 #include "TLatex.h"
-
+#include "TLine.h"
 
 #include "../interface/MT2Config.h"
 #include "../interface/MT2Analysis.h"
@@ -28,7 +28,7 @@
 void do_fit(float ht_min, float ht_max, int n_bins, TTree* tree);
 double ratio(float ht_min, float ht_max, float mt2_low, float mt2_high, float threshold, TTree* tree);
 //double pow_bg(double mt2, double *param);
-
+void set_ratio(float ht_min, float ht_max, TH1D* histogram, float threshold, TTree* tree);
 
 int main( int argc, char* argv[] ) {
     
@@ -52,15 +52,6 @@ int main( int argc, char* argv[] ) {
   std::cout << "Done." << std::endl;
 
 
-  //now first experiment with first ht region and 60<mt2<100
-  /* std::cout << "Try with first region: 250MeV < ht < 450MeV, 60MeV < mt2 < 100MeV" << std::endl;
-  tree->Draw("deltaPhiMin", "ht<450 && ht>250 && mt2>60 && mt2<100");
-  //TBranch* DeltaPhiMin = tree->GetBranch("DeltaPhiMin"); 
-  
-  std::cout << "r_phi (first region)  = "<< ratio(250.0, 450.0, 60.0, 100.0, 0.3, tree) << std::endl;
-  c1->SaveAs("plotFilippo/provaqcd.pdf");
-  */
-
   do_fit(250.0, 450.0, 8, tree);
   
   delete c1;
@@ -68,11 +59,6 @@ int main( int argc, char* argv[] ) {
   return 0;
 }
 
-
-/*double pow_bg(double mt2, double *param){
-    //fitting function for qcd background
-    return param[0]*pow(mt2,param[1]);
-};*/
 
 double ratio(float ht_min, float ht_max, float mt2_low, float mt2_high, float threshold, TTree* tree){
   //Define conditions for events in given phasespace above/below threshold
@@ -100,46 +86,96 @@ double ratio(float ht_min, float ht_max, float mt2_low, float mt2_high, float th
   return rat;
 }
 
+void set_ratio(float ht_min, float ht_max, TH1D* histogram, float threshold, TTree* tree){
+
+  TAxis* Axis = histogram->GetXaxis();
+  
+  int num_bins = histogram->GetNbinsX(); 
+  double rphi;
+  double low_lim; double high_lim;
+
+  for (int i = 1; i<=num_bins; i++){
+     low_lim = Axis->GetBinLowEdge(i);
+     high_lim = Axis->GetBinUpEdge(i);
+     rphi = ratio(ht_min, ht_max, low_lim, high_lim, threshold, tree);
+     histogram->SetBinContent(i, rphi);
+     std::cout << low_lim << "GeV < mt2 < " << high_lim << " GeV : r_phi = " << rphi << std::endl;
+     }
+  std::cout<<"Ratio was set";
+  
+  //FOR SOME REASONS MEMEORY LEAK AT END OF FOR LOOP WITH DELETE AXIS
+  //delete Axis;
+
+}
+
 void do_fit(float ht_min, float ht_max, int n_bins, TTree* tree){
   //ht_min and ht_max are the boundaries of the ht interval to be considered
   //n_bins is the number of bins in mt2
   //tree is the tree containing the data
   double delta_Phi_threshold = 0.3;
+  //limits of fitting region:
   double mt2_min = 60.0; double mt2_max = 100.0;
-  double interval_mt2 = (mt2_max - mt2_min)/n_bins;
   
-  double mt2_s [n_bins]; 
-  
+  //max and min mt2 for whole plot (not only region for fitting)
+  double mt2_min_global = 55.0; double mt2_max_global = 140.0;
+ 
+
   //trovare nome carino per istogramma
-  TH1D* histo = new TH1D("histo", "fit", n_bins, mt2_min, mt2_max); 
-   
+ // TH1D* histo = new TH1D("histo", "fit", n_bins, mt2_min, mt2_max); 
+  TH1D* histo = new TH1D("histo", "CMS simulation, #sqrt{s} = 13 TeV", 16, mt2_min_global, mt2_max_global);
   //compute r_phi ratio for every bin:
-  for (int i=0; i<n_bins; ++i){
-      mt2_s[i] = mt2_min + (double)i*interval_mt2;
-      double* rphi = new double;
-      *rphi = ratio(ht_min, ht_max, mt2_s[i], mt2_s[i] + interval_mt2, delta_Phi_threshold, tree); 
-      histo->SetBinContent(i+1, *rphi);
-      //std::cout << mt2_s[i] << "GeV < mt2 < " << mt2_s[i] + interval_mt2 << " GeV : r_phi = " << histo->GetBinContent(i) << std::endl;
-      std::cout << mt2_s[i] << "GeV < mt2 < " << mt2_s[i] + interval_mt2 << " GeV : r_phi = " << *rphi << std::endl;
-      delete rphi;
-      }
  
+  set_ratio(ht_min, ht_max, histo, delta_Phi_threshold, tree);
+
+
   TF1 *pow_bg = new TF1("pow_bg", "[0]*pow(x,[1])", mt2_min, mt2_max);
-  histo->Fit("pow_bg");
+  histo->Fit("pow_bg", "R 0"); //R: fit in the range of the function. don't plot now the fitted function
+  //plot it later on whole rangem also beyone 100GeV
  
+  TF1 *fitResult = histo->GetFunction("pow_bg");
+
+  double param_a = fitResult->GetParameter(0);
+  double param_b = fitResult->GetParameter(1);
+  
+  //now define fitted function over whole range (i.e. not only fitting region)
+  TF1 *fitted_bg = new TF1("pow_bg", "[0]*pow(x,[1])", mt2_min_global, mt2_max_global);
+  fitted_bg->SetParameter(0, param_a);
+  fitted_bg->SetParameter(1, param_b);
+
   TCanvas* cfit = new TCanvas("cfit","Fit with power law"); 
-  gPad->SetLogx(); 
+  //gPad->SetLogx(); 
   gPad->SetLogy();
-  histo->GetXaxis()->SetTitle("MT2");  
+  histo->GetXaxis()->SetTitle("M_{T2} [GeV]");  
   histo->GetYaxis()->SetTitle("r_{#phi}");
   histo->LabelsOption("h","Y"); //IN QUALCHE MODO IL LABEL E' SEMPRE STORTO
-  histo->Draw(); //	CAPIRE COME USARE UNO STILE COME NEL FIT DI MASCIOVECCHIO
-  cfit->SaveAs("plotFilippo/provafit.pdf");
+  //histo->SetMarkerStyle(kFullSquare); per qualche motivo non funziona, ottengo una linea continua
+  histo->Draw();
+  fitted_bg->Draw("SAME");  
   
-  //CALCOLARE IL RATIO ANCHE PER REGIONI FUORI DA 60-100
+  //add text with descrption of considered region
+  std::ostringstream descr;
+  descr << ht_min << " GeV < H_{T} < " << ht_max << " GeV";
+  std::string description = descr.str(); 
+  TPaveText *pt = new TPaveText(0.4,0.8,0.65,0.85, "NDC");
+  pt->AddText(description.c_str());
+  pt->Draw("SAME");
+  
+  //draw vertical lines at 60 and 100 GeV Mt2
+  double x_min = gPad->GetUxmin(); double x_max = gPad->GetUxmax();
+  double y_min = gPad->GetUymin(); double y_max = gPad->GetUymax();
+  double NDC_60 = x_min + (60.0- x_min)/(x_max - x_min);
+  double NDC_100 = x_min + (100.0- x_min)/(x_max - x_min);
+  TLine *line1 = new TLine(mt2_min,y_min, mt2_min, y_max);
+  TLine *line2 = new TLine(mt2_max,y_min, mt2_max, y_max);
+  line1->SetLineStyle(2); line2->SetLineStyle(2);
+  line1->Draw("SAME");
+  line2->Draw("SAME");
+
+  cfit->SaveAs("plotFilippo/provafit.pdf");
+  //problema con getUymax in logascale, da' solo 1 e vegono linee non fino in cima 
   //CAPIRE PERCHE' ERRORE COSI' GRANDE SUI PARAMETRI
   //COPIARE STILE DA CODICE MASCIOVECCHIO
-  //PLOTTARE TUTTO, INCLUSA FUNZIONE FITTATA SOPRA, PLOTTATA SU TUTTO IL RANGE DI MT2
+  //PLOTTARE ANCHE FIT CON RANGE DELLE INCERTEZZE
   //SCRIVERE NEL PLOT I PARAMETRI OTTENUTI? IN OGNI CASO CAPIRE E SCRIVERE IL CHI2/NDF   
   delete cfit;
   delete histo;
