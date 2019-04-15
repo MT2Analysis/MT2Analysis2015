@@ -117,12 +117,14 @@ void do_fit(float ht_min, float ht_max, int n_bins, TTree* tree){
   double mt2_min = 60.0; double mt2_max = 100.0;
   
   //max and min mt2 for whole plot (not only region for fitting)
-  double mt2_min_global = 55.0; double mt2_max_global = 140.0;
+  double mt2_min_global = 50.0; double mt2_max_global = 450.0;
  
 
   //trovare nome carino per istogramma
  // TH1D* histo = new TH1D("histo", "fit", n_bins, mt2_min, mt2_max); 
-  TH1D* histo = new TH1D("histo", "CMS simulation, #sqrt{s} = 13 TeV", 16, mt2_min_global, mt2_max_global);
+  float bins[] = {50.0,55.0,60.0,65.0,70.0,75.0,80.0,85.0,90.0,95.0,100.0,120.0,200.0,300.0,450.0};
+  int  binnum = sizeof(bins)/sizeof(float) - 1;
+  TH1D* histo = new TH1D("histo", "CMS simulation, #sqrt{s} = 13 TeV", binnum,  bins);
   //compute r_phi ratio for every bin:
  
   set_ratio(ht_min, ht_max, histo, delta_Phi_threshold, tree);
@@ -143,13 +145,16 @@ void do_fit(float ht_min, float ht_max, int n_bins, TTree* tree){
   fitted_bg->SetParameter(1, param_b);
 
   TCanvas* cfit = new TCanvas("cfit","Fit with power law"); 
-  //gPad->SetLogx(); 
+  gPad->SetLogx(); 
   gPad->SetLogy();
   histo->GetXaxis()->SetTitle("M_{T2} [GeV]");  
   histo->GetYaxis()->SetTitle("r_{#phi}");
   histo->LabelsOption("h","Y"); //IN QUALCHE MODO IL LABEL E' SEMPRE STORTO
   //histo->SetMarkerStyle(kFullSquare); per qualche motivo non funziona, ottengo una linea continua
-  histo->Draw();
+  histo->SetStats(0); //don't show information box on graph
+  histo->SetMarkerStyle(24);
+  histo->SetLineColor(kBlack);
+  histo->Draw("P");
   fitted_bg->Draw("SAME");  
   
   //add text with descrption of considered region
@@ -161,18 +166,26 @@ void do_fit(float ht_min, float ht_max, int n_bins, TTree* tree){
   pt->Draw("SAME");
   
   //draw vertical lines at 60 and 100 GeV Mt2
-  double x_min = gPad->GetUxmin(); double x_max = gPad->GetUxmax();
-  double y_min = gPad->GetUymin(); double y_max = gPad->GetUymax();
-  double NDC_60 = x_min + (60.0- x_min)/(x_max - x_min);
-  double NDC_100 = x_min + (100.0- x_min)/(x_max - x_min);
+  //double x_min = gPad->GetUxmin(); double x_max = gPad->GetUxmax();
+  //double y_min = gPad->GetUymin(); double y_max = gPad->GetUymax();
+  //double NDC_60 = x_min + (60.0- x_min)/(x_max - x_min);
+  //double NDC_100 = x_min + (100.0- x_min)/(x_max - x_min);
+  float y_min = 0.1; float y_max = 6.0; //NOT NICE: FIX TO FIND GENERAL WAY TO FIND YMAX ALSO IN LOGPLOTI
   TLine *line1 = new TLine(mt2_min,y_min, mt2_min, y_max);
   TLine *line2 = new TLine(mt2_max,y_min, mt2_max, y_max);
   line1->SetLineStyle(2); line2->SetLineStyle(2);
   line1->Draw("SAME");
   line2->Draw("SAME");
 
+  /*TPaveText *chi2;
+  chi2 = new TPaveText(0.22,0.23, 0.5,0.18,"brNDC");
+  chi2->SetFillColor(10);   chi2->SetBorderSize(0);
+  chi2->AddText(Form("#chi^{2}/ndf = %.1f/%d: %.1f%%", thisFitQCD->GetChisquare(), thisFitQCD->GetNDF(), thisFitQCD->GetProb()*100));
+  chi2->Draw("SAME");*/ //SISTEMARE E AGGIUNGERE CHISQUARE
+
   cfit->SaveAs("plotFilippo/provafit.pdf");
   //problema con getUymax in logascale, da' solo 1 e vegono linee non fino in cima 
+  //INSERIRE BARRA ORIZZONTALE PER LARGHEZZA BIN OLTRE AL PUNTO CENTRALE
   //CAPIRE PERCHE' ERRORE COSI' GRANDE SUI PARAMETRI
   //COPIARE STILE DA CODICE MASCIOVECCHIO
   //PLOTTARE ANCHE FIT CON RANGE DELLE INCERTEZZE
