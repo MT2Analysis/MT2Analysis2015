@@ -1,4 +1,3 @@
-#include <cmath>
 #include <iostream>
 #include <map>
 #include <string>
@@ -28,9 +27,9 @@
 #include "../interface/MT2DrawTools.h"
 
 
-void do_fit(float ht_min, float ht_max, std::string  cond_all, std::string cond_qcd, TTree* tree, bool useMC);
-double ratio(float ht_min, float ht_max, float mt2_low, float mt2_high, std::string  condition, float threshold, TTree* tree, bool useMC);
-TH1D* set_ratio(float ht_min, float ht_max, std::string  condition, float threshold, TTree* tree);
+void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string cond_qcd, TTree* tree, bool useMC);
+double ratio(double ht_min, double ht_max, double mt2_low, double mt2_high, std::string  condition, double threshold, TTree* tree, bool useMC);
+TH1D* set_ratio(double ht_min, double ht_max, std::string  condition, double threshold, TTree* tree);
 //double SumWeight(TTree* tree, std::string condition);
 
 int main( int argc, char* argv[] ) {
@@ -68,7 +67,6 @@ int main( int argc, char* argv[] ) {
   std::cout<< "dataPath "<< dataPath << std::endl;
   std::cout << "Getting data... "; 
   TFile* data = new TFile(dataPath.c_str(), "READ");
-  TCanvas* c1 = new TCanvas("c1","First graph");
   TTree* tree = (TTree*)data->Get("qcdCRtree/HT250toInf_j1toInf_b0toInf/tree_qcdCRtree_HT250toInf_j1toInf_b0toInf");
   std::cout << "Done." << std::endl;
 
@@ -84,13 +82,13 @@ int main( int argc, char* argv[] ) {
   do_fit(1000.0, 1500.0, cond_all, cond_qcd, tree, useMC); std::cout<<""<<std::endl<<""<<std::endl<<""<<std::endl;
   do_fit(1500.0, 13000.0, cond_all, cond_qcd, tree, useMC); std::cout<<""<<std::endl<<""<<std::endl<<""<<std::endl;
   
-  delete c1;
+
   data->Close();
   return 0;
 }
 
 
-TH1D* set_ratio(float ht_min, float ht_max, std::string  condition, float threshold, TTree* tree, std::string qcd_or_all, bool useMC){
+TH1D* set_ratio(double ht_min, double ht_max, std::string  condition, double threshold, TTree* tree, std::string qcd_or_all, bool useMC){
 
     //cuts:
     std::ostringstream oss_big;
@@ -117,13 +115,13 @@ TH1D* set_ratio(float ht_min, float ht_max, std::string  condition, float thresh
     else if (qcd_or_all == "all" && ht_min>500.0) {binnum = binnum_c;}
      PROVARE CON VECTOR*/
    
-    float scaleMC = 0.; // simulate stats for the given lumi [0 means MC stats]
+    double scaleMC = 0.; // simulate stats for the given lumi [0 means MC stats]
     
-    float prescales[3] = {7900., 440.6, 110.2}; // up to run G 27.7 fb-1
+    double prescales[3] = {7900., 440.6, 110.2}; // up to run G 27.7 fb-1
     
-    float lumiScale = 1.;
-    float sfFromSNT[5] = {1.88375, 1.38677, 1.27216, 1.16806, 1.02239};
-    float lumiRatioGtoH = 27.261/35.876;
+    double lumiScale = 1.;
+    double sfFromSNT[5] = {1.88375, 1.38677, 1.27216, 1.16806, 1.02239};
+    double lumiRatioGtoH = 27.261/35.876;
     
     bool onlyUseUpToRunG = false; //SISTEMARE
     
@@ -160,11 +158,13 @@ TH1D* set_ratio(float ht_min, float ht_max, std::string  condition, float thresh
     h_ratio->Divide(h_big, h_small);
     
     //std::cout<<"Ratio was set";
-    
+    delete h_small;
+    delete h_big;
     return h_ratio;
+
 }
 
-void do_fit(float ht_min, float ht_max, std::string  cond_all, std::string cond_qcd, TTree* tree, bool useMC){
+void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string cond_qcd, TTree* tree, bool useMC){
   //ht_min and ht_max are the boundaries of the ht interval to be considered
   //n_bins is the number of bins in mt2
   //tree is the tree containing the data
@@ -175,35 +175,72 @@ void do_fit(float ht_min, float ht_max, std::string  cond_all, std::string cond_
   
   //max and min mt2 for whole plot (not only region for fitting)
   double mt2_min_global = 50.0; double mt2_max_global = 1000.0;
- 
-  std::cout<<ht_min<<" GeV < H_T < "<<ht_max;
+    
+  //names (to avoid segfault)
+  std::ostringstream reg_nm;
+  reg_nm << ht_min << "<HT<" << ht_max;
+  std::string region_name = reg_nm.str();
+  
+    std::ostringstream pow_bg_nm;
+    pow_bg_nm << region_name.c_str()<<"_pow_bg";
+    std::string pow_bg_name = pow_bg_nm.str();
+   
+    std::ostringstream pow_bg_nm_left;
+    pow_bg_nm_left << region_name.c_str()<<"_pow_bg_left";
+    std::string pow_bg_left_name = pow_bg_nm_left.str();
+    
+    std::ostringstream pow_bg_nm_right;
+    pow_bg_nm_right << region_name.c_str()<<"_pow_bg_right";
+    std::string pow_bg_right_name = pow_bg_nm_right.str();
+    
+    std::ostringstream cfit_nm;
+    cfit_nm << region_name.c_str()<<"_cfit";
+    std::string cfit_name = cfit_nm.str();
+    
+    std::ostringstream pow_bg_fit_nm;
+    pow_bg_fit_nm << region_name.c_str()<<"_pow_bg_fit";
+    std::string pow_bg_fit_name = pow_bg_fit_nm.str();
+    
+    std::ostringstream band_nm;
+    band_nm << region_name.c_str()<<"_band";
+    std::string band_name = band_nm.str();
+    
+    
+    std::cout<<ht_min<<" GeV < H_T < "<<ht_max<<std::endl;
 
+  TCanvas* cfit = new TCanvas(cfit_name.c_str(),"Fit with power law");
+  std::cout<<"canvas was created"<<std::endl;
+    
   TH1D* histo_qcd = set_ratio(ht_min, ht_max, cond_qcd, delta_Phi_threshold , tree, "qcd", useMC);
   TH1D* histo_all = set_ratio(ht_min, ht_max, cond_all, delta_Phi_threshold , tree, "all", useMC);
 
-  TF1 *pow_bg = new TF1("pow_bg", "[0]*pow(x,[1])", mt2_min, mt2_max);
-  histo_qcd->Fit("pow_bg", "R 0"); //R: fit in the range of the function. don't plot now the fitted function
- 
-  TF1 *fitResult = histo_qcd->GetFunction("pow_bg");
+  
+  TF1* pow_bg = new TF1(pow_bg_name.c_str(), "[0]*TMath::Power(x,[1])", mt2_min, mt2_max);
+  TH1D* band = new TH1D(band_name.c_str(), "Fitted gaussian with .68 conf.band", 500, mt2_min_global, mt2_max_global);
+
+  histo_qcd->Fit(pow_bg_name.c_str(), "R 0"); //R: fit in the range of the function. don't plot now the fitted function
+  (TVirtualFitter::GetFitter())->GetConfidenceIntervals(band, 0.68);
+    
+  TF1* fitResult = histo_qcd->GetFunction(pow_bg_name.c_str());
 
   double param_a = fitResult->GetParameter(0);
   double param_b = fitResult->GetParameter(1);
    
-  double mt2_min_right = mt2_min + 5.;
-  double mt2_max_right = mt2_max + 25.;
-  double mt2_min_left = mt2_min - 5.;
+  double mt2_min_right = mt2_min + 5.0;
+  double mt2_max_right = mt2_max + 25.0;
+  double mt2_min_left = mt2_min - 5.0;
   double mt2_max_left  = mt2_max;
     
-  TF1 *pow_bg_right = new TF1("pow_bg_right", "[0]*pow(x,[1])", mt2_min_right, mt2_max_right);
-  TF1 *pow_bg_left = new TF1("pow_bg_left", "[0]*pow(x,[1])", mt2_min_left, mt2_max_left);
+  TF1* pow_bg_right = new TF1(pow_bg_right_name.c_str(), "[0]*TMath::Power(x,[1])", mt2_min_right, mt2_max_right);
+  TF1* pow_bg_left = new TF1(pow_bg_left_name.c_str(), "[0]*TMath::Power(x,[1])", mt2_min_left, mt2_max_left);
   
   std::cout<<"Right variation:"<<std::endl;
-  histo_qcd->Fit("pow_bg_right", "R 0");
-  TF1 *fitResult_right = histo_qcd->GetFunction("pow_bg_right");
+  histo_qcd->Fit(pow_bg_right_name.c_str(), "R 0");
+  TF1* fitResult_right = histo_qcd->GetFunction(pow_bg_right_name.c_str());
   
   std::cout<<"Left variation:"<<std::endl;
-  histo_qcd->Fit("pow_bg_left", "R 0");
-  TF1 *fitResult_left = histo_qcd->GetFunction("pow_bg_left");
+  histo_qcd->Fit(pow_bg_left_name.c_str(), "R 0");
+  TF1* fitResult_left = histo_qcd->GetFunction(pow_bg_left_name.c_str());
   
   double param_b_right = fitResult_right->GetParameter(1);
   double param_b_left = fitResult_left->GetParameter(1);
@@ -214,71 +251,74 @@ void do_fit(float ht_min, float ht_max, std::string  cond_all, std::string cond_
     
   std::cout << "Slope variation: " << var_right << " (right) / " << var_left << "(left)" << std::endl<< "   maximal variation: " << var_max << std::endl;
     
+  gPad->SetLogx();
+  gPad->SetLogy();
+    //gPad->SetTitle( "CMS simulation, #sqrt{s} = 13 TeV");
     
-  //now define fitted function over whole range (i.e. not only fitting region)
-  TF1 *fitted_bg = new TF1("pow_bg_fit", "[0]*pow(x,[1])", mt2_min_global, mt2_max_global);
+  
+  band->GetXaxis()->SetTitle("M_{T2} [GeV]");
+  band->GetXaxis()->SetNoExponent();
+  band->GetXaxis()->SetMoreLogLabels();
+  band->GetYaxis()->SetTitle("r_{#phi}");
+  band->SetTitle("CMS simulation, #sqrt{s} = 13 TeV");
+  band->SetFillColor(29);
+  band->SetFillStyle(3001);
+  band->SetMinimum(0.01);
+  band->SetMaximum(10000.0);
+  band->SetStats(0);
+  band->SetLineColor(4);
+  band->Draw("C E3");
+    
+
+    //now define fitted function over whole range (i.e. not only fitting region)
+  TF1* fitted_bg = new TF1(pow_bg_fit_name.c_str(), "[0]*TMath::Power(x,[1])", mt2_min_global, mt2_max_global);
   fitted_bg->SetParameter(0, param_a);
   fitted_bg->SetParameter(1, param_b);
-  fitted_bg->SetParError(0, fitResult->GetParError(0));
-  fitted_bg->SetParError(1, fitResult->GetParError(1));
-  fitted_bg->GetXaxis()->SetTitle("M_{T2} [GeV]");
-  fitted_bg->GetXaxis()->SetNoExponent();
-  fitted_bg->GetXaxis()->SetMoreLogLabels();
-  fitted_bg->GetYaxis()->SetTitle("r_{#phi}");
-  fitted_bg->SetTitle("CMS simulation, #sqrt{s} = 13 TeV");
-  fitted_bg->SetFillColor(29);
-  fitted_bg->SetFillStyle(3001);
+  fitted_bg->SetLineColor(4);
   fitted_bg->SetMinimum(0.01);
+  fitted_bg->SetLineWidth(1);
   fitted_bg->SetMaximum(10000.0);
-    
-
-
-  TCanvas* cfit = new TCanvas("cfit","Fit with power law");
-  //add legend:
-  TLegend* legend = new TLegend(0.68,0.72,0.85,0.86);
-  gPad->SetLogx(); 
-  gPad->SetLogy();
-  //gPad->SetTitle( "CMS simulation, #sqrt{s} = 13 TeV");
+  fitted_bg->Draw("L SAME");
   
-  
-  legend->AddEntry( "pow_bg_fit", "Fit", "FL" );
-  fitted_bg->Draw("L E3");  //draw fitted function first since it needs more y range
-  //fitResult->Draw("E3");
     
-    
-  histo_qcd->LabelsOption("h","Y"); //IN QUALCHE MODO IL LABEL E' SEMPRE STORTO
+  std::cout<<"fit was plotted"<<std::endl;
+ 
   //histo->SetMarkerStyle(kFullSquare); per qualche motivo non funziona, ottengo una linea continua
-  histo_qcd->SetStats(0); //don't show information box on graph
+  //histo_qcd->SetStats(0); //don't show information box on graph
   histo_qcd->SetMarkerStyle(24);
+  //histo_qcd->LabelsOption("h","Y"); //IN QUALCHE MODO IL LABEL E' SEMPRE STORTO
+  histo_qcd->SetStats(0);
   histo_qcd->SetLineColor(kBlack);
-  legend->AddEntry("h_ratio_qcd","Simulation (multijet only)","PL");
   histo_qcd->Draw("SAME P");
     
  histo_all->LabelsOption("h","Y"); //IN QUALCHE MODO IL LABEL E' SEMPRE STORTO
-    //histo->SetMarkerStyle(kFullSquare); per qualche motivo non funziona, ottengo una linea continua
+ //histo->SetMarkerStyle(kFullSquare); per qualche motivo non funziona, ottengo una linea continua
  histo_all->SetStats(0); //don't show information box on graph
  histo_all->SetMarkerStyle(20);
  histo_all->SetLineColor(kBlack);
- legend->AddEntry("h_ratio_all","Simulation (all)","PL");
  histo_all->Draw("SAME P");
 
+  std::cout<<"histos were plotted"<<std::endl;
 
-  
-  //CAPIRE: I MONOJET ENTRANO IN QCD??
- 
+
+  //add legend:
+  TLegend* legend = new TLegend(0.68,0.72,0.85,0.86);
+  legend->AddEntry(band_name.c_str(), "Fit", "FL");
+  legend->AddEntry("h_ratio_qcd","Simulation (multijet only)","PL");
+  legend->AddEntry("h_ratio_all","Simulation (all)","PL");
   legend->Draw();
 
   //add text with descrption of considered region
   std::ostringstream descr;
   descr << ht_min << " GeV < H_{T} < " << ht_max << " GeV";
   std::string description = descr.str(); 
-  TPaveText *pt = new TPaveText(0.4,0.8,0.65,0.85, "NDC");
+  TPaveText* pt = new TPaveText(0.4,0.8,0.65,0.85, "NDC");
   pt->AddText(description.c_str());
   pt->Draw("SAME");
   
   //add lines at 60 and 100 GeV
-  TLine *line1 = new TLine(mt2_min,1e-2, mt2_min, 1e4);
-  TLine *line2 = new TLine(mt2_max,1e-2, mt2_max, 1e4);
+  TLine* line1 = new TLine(mt2_min,1e-2, mt2_min, 1e4);
+  TLine* line2 = new TLine(mt2_max,1e-2, mt2_max, 1e4);
   line1->SetLineStyle(2); line2->SetLineStyle(2);
   line1->Draw("SAME");
   line2->Draw("SAME");
@@ -287,15 +327,13 @@ void do_fit(float ht_min, float ht_max, std::string  cond_all, std::string cond_
   std::ostringstream descr_chi2;
   descr_chi2 <<"#chi^{2}/ndf = "<<fitResult->GetChisquare()<<"/"<< fitResult->GetNDF()<<": "<< fitResult->GetProb()*100.0<<"%";
   std::string description_chi2 = descr_chi2.str();
-  TPaveText *chi2;
+  TPaveText* chi2;
   chi2 = new TPaveText(0.22,0.23, 0.5,0.18,"brNDC");
   chi2->SetFillColor(10);   chi2->SetBorderSize(0);
   chi2->AddText(description_chi2.c_str());
   chi2->Draw("SAME");
  
-  gPad->RedrawAxis();
-  
-  
+  std::cout<<"decos were plotted"<<std::endl;
     
   //save plot with file name indicating ht area
   std::ostringstream op_nm;
@@ -306,26 +344,36 @@ void do_fit(float ht_min, float ht_max, std::string  cond_all, std::string cond_
   std::string output_name = op_nm.str();
   cfit->SaveAs(output_name.c_str());
     
-  //aggiungere pesi secondari
-  //cominciare a differenziare mc/data
+    
+  //cominciare a differenziare mc/data e capire dettagli dei prescsales
   //PLOTTARE ANCHE FIT CON RANGE DELLE INCERTEZZE
-  //SCRIVERE NEL PLOT I PARAMETRI OTTENUTI? IN OGNI CASO CAPIRE E SCRIVERE IL CHI2/NDF
- //CAPIRE COME FUNZIONA MAKEANALYSISFROMINCLUSIVETREE NELLA CLASSE MT2ESTIMATE
     //capire bene perche' i pesi in MC
-    //mt2min = 70 per htmin>1000
     //aggiungere il band con incertezza sul fit, capire se è l'incertezza statistica o quella ottenuta variando il range, o entrambe
-  //delete cfit;
-  //delete pow_bg;
-};
+    //capre come fa a plottare il range di confidenza. in particolare come una getConfidenceIntervals e bands
+    
+  delete chi2;
+  delete pt;
+  delete legend;
+  delete line1;
+  delete line2;
+  delete pow_bg;
+  delete band;
+    delete fitted_bg;
+  delete pow_bg_right;
+  delete pow_bg_left;
+  delete histo_qcd;
+  delete histo_all;
+  delete cfit;
+}
 
 
 
-/*float lumiRatioGtoH = 27.261/35.876;
+/*double lumiRatioGtoH = 27.261/35.876;
 
-float prescales[3] = {7900., 440.6, 110.2}; // up to run G 27.7 fb-1
+double prescales[3] = {7900., 440.6, 110.2}; // up to run G 27.7 fb-1
 
-float lumiScale = 1.;
-float sfFromSNT[5] = {1.88375, 1.38677, 1.27216, 1.16806, 1.02239};
+double lumiScale = 1.;
+double sfFromSNT[5] = {1.88375, 1.38677, 1.27216, 1.16806, 1.02239};
 
 
 if( !useMC || scaleMC!=0. ) {
