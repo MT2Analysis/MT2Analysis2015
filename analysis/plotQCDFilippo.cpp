@@ -28,9 +28,8 @@
 
 
 void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string cond_qcd, TTree* tree, bool useMC);
-double ratio(double ht_min, double ht_max, double mt2_low, double mt2_high, std::string  condition, double threshold, TTree* tree, bool useMC);
 TH1D* set_ratio(double ht_min, double ht_max, std::string  condition, double threshold, TTree* tree);
-//double SumWeight(TTree* tree, std::string condition);
+
 
 int main( int argc, char* argv[] ) {
     
@@ -92,11 +91,11 @@ TH1D* set_ratio(double ht_min, double ht_max, std::string  condition, double thr
 
     //cuts:
     std::ostringstream oss_big;
-    oss_big <<"("<< condition << "&& ht<" << ht_max << " && ht>" << ht_min <<  " && deltaPhiMin>" << threshold<<")";
+    oss_big <<"("<< condition.c_str() << "&& ht<" << ht_max << " && ht>" << ht_min <<  " && deltaPhiMin>" << threshold<<" && nJets>1)";
     std::string cond_big = oss_big.str();
     
     std::ostringstream oss_small;
-    oss_small<<"("<< condition << "&& ht<" << ht_max << " && ht>" << ht_min << " && deltaPhiMin<" <<threshold<<")";
+    oss_small<<"("<< condition.c_str() << "&& ht<" << ht_max << " && ht>" << ht_min << " && deltaPhiMin<" <<threshold<<" && nJets>1)";
     std::string cond_small = oss_small.str();
     
     //name of output histogram:
@@ -104,57 +103,69 @@ TH1D* set_ratio(double ht_min, double ht_max, std::string  condition, double thr
     histo_name <<"h_ratio_"<< qcd_or_all;
     std::string name = histo_name.str();
     
-    //set bins depending on all/onlyqcd and ht region FINIRE
-    /*int binnum_a = 15; int binnum_b = 16; int binnum_c = 17;
-    double bins_a = {50.0, 55.0,  60.0, 65.0, 70.0, 75.0, 80.0, 85.0, 90.0, 95.0, 100.0, 120.0, 200.0, 300.0, 500.0};
-    double bins_b = {50.0, 55.0,  60.0, 65.0, 70.0, 75.0, 80.0, 85.0, 90.0, 95.0, 100.0, 120.0, 200.0, 300.0, 500.0, 800.};
-    double bins_c = {50.0, 55.0,  60.0, 65.0, 70.0, 75.0, 80.0, 85.0, 90.0, 95.0, 100.0, 120.0, 200.0, 300.0, 500.0, 800., 1100};
-    int binnum = binnum_a;
-    double bins[binnum];
-    if ((ht_min<=500.0 && qcd_or_all == "all") || (ht_min>500.0 && qcd_or_all = "qcd")) {binnum = binnum_b;}
-    else if (qcd_or_all == "all" && ht_min>500.0) {binnum = binnum_c;}
-     PROVARE CON VECTOR*/
    
-    double scaleMC = 0.; // simulate stats for the given lumi [0 means MC stats]
-    
-    double prescales[3] = {7900., 440.6, 110.2}; // up to run G 27.7 fb-1
-    
-    double lumiScale = 1.;
-    double sfFromSNT[5] = {1.88375, 1.38677, 1.27216, 1.16806, 1.02239};
-    double lumiRatioGtoH = 27.261/35.876;
-    
-    bool onlyUseUpToRunG = false; //SISTEMARE
-    
-    
-    if( !useMC || scaleMC!=0. ) {
-        //lumiScale = useMC ? scaleMC : cfg.lumi(); SISTEMARE
-        if     ( ht_min < 300. ) lumiScale *= sfFromSNT[0]/prescales[0];
-        else if( ht_min< 500. ) lumiScale *= sfFromSNT[1]/prescales[1];
-        else if( ht_min < 600. ) lumiScale *= sfFromSNT[2]/prescales[2];
-        else if( ht_min < 1100.) lumiScale *= sfFromSNT[3];
-        else                          lumiScale *= sfFromSNT[4];
-        if (onlyUseUpToRunG)
-            lumiScale *= lumiRatioGtoH;
-    }
-    
     double bins[] = {50.0, 55.0,  60.0, 65.0, 70.0, 75.0, 80.0, 85.0, 90.0, 95.0, 100.0, 125.0, 200.0, 300.0, 500.0};
     int  binnum = sizeof(bins)/sizeof(double) - 1;
     
     TH1D* h_small = new TH1D ("h_small", "h_small", binnum, bins);
     TH1D* h_big = new TH1D ("h_big", "h_big", binnum, bins);
-    TH1D* h_ratio = new TH1D (name.c_str(), "h_ratio", binnum, bins);
     
+    //for data subtract nonQCD using montecarlo simulation:
+    //if (!useMC) subtract_nonQCD(h_big, h_small, ht_min, ht_max, threshold);
+
+   TH1D* h_ratio = new TH1D (name.c_str(), "h_ratio", binnum, bins);
     
     TCut selection_big = cond_big.c_str();
     TCut selection_small = cond_small.c_str();
     
-    TCut weight = "weight";
+    TCut weight = "weight";  //for data the variable weight is simply set to 1, so this works formally for both data and mc
     TCut lumi = "lumi";
     TCut selection_big_and_weight = selection_big*weight;
     TCut selection_small_and_weight = selection_small*weight;
     
     tree->Draw("mt2>>h_big", selection_big_and_weight, "goff");
     tree->Draw("mt2>>h_small", selection_small_and_weight, "goff");
+    
+    if (!useMC && qcd_or_all = "qcd") {
+        
+        std::cout<<"Subtracting non qcd from mc..."
+        std::string mcpath = "EventYields_dataETH_SnTMC_35p9ifb/qcdControlRegion/mc.root";
+        TFile* mc = new TFile(mcpath.c_str(), "READ");
+        TTree* mc_tree = (TTree*)mc->Get("qcdCRtree/HT250toInf_j1toInf_b0toInf/tree_qcdCRtree_HT250toInf_j1toInf_b0toInf");
+        
+        TH1D* h_small_mc = new TH1D ("h_small_mc", "h_small_mc", binnum, bins);
+        TH1D* h_big_mc = new TH1D ("h_big_mc", "h_big_mc", binnum, bins);
+        mc_tree->Draw("mt2>>h_big_mc", selection_big_and_weight, "goff");
+        mc_tree->Draw("mt2>>h_small_mc", selection_small_and_weight, "goff");
+        
+        bool onlyUseUpToRunG = true;
+        
+        double lumiRatioGtoH = 27.261/35.876;
+        double prescales[3] = {7900., 440.6, 110.2}; // up to run G 27.7 fb-1
+        double lumiScale = 35.876;
+        double sfFromSNT[5] = {1.88375, 1.38677, 1.27216, 1.16806, 1.02239};
+        
+        //lumiScale = useMC ? scaleMC : cfg.lumi(); SCALEMC???
+        
+        if     ( ht_min < 300. ) lumiScale *= sfFromSNT[0]/prescales[0];
+        else if( ht_min< 500. ) lumiScale *= sfFromSNT[1]/prescales[1];
+        else if( ht_min< 600. ) lumiScale *= sfFromSNT[2]/prescales[2];
+        else if( ht_min< 1100.) lumiScale *= sfFromSNT[3];
+        else                          lumiScale *= sfFromSNT[4];
+        if (onlyUseUpToRunG)
+            lumiScale *= lumiRatioGtoH;
+        
+        lumiScale = - lumiScale; //add minus sign for subtraction
+        
+        h_small->Add(h_small_mc, lumiScale);
+        h_big->Add(h_big_mc, lumiScale);
+        
+        delete h_small_mc;
+        delete h_big_mc;
+        
+        std::cout<<" ...done"<<std::endl;
+    }
+    
     h_ratio->Divide(h_big, h_small);
     
     //std::cout<<"Ratio was set";
@@ -163,6 +174,7 @@ TH1D* set_ratio(double ht_min, double ht_max, std::string  condition, double thr
     return h_ratio;
 
 }
+
 
 void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string cond_qcd, TTree* tree, bool useMC){
   //ht_min and ht_max are the boundaries of the ht interval to be considered
@@ -208,12 +220,18 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
     
     std::cout<<ht_min<<" GeV < H_T < "<<ht_max<<std::endl;
 
+  //start the plotting; create canvas
   TCanvas* cfit = new TCanvas(cfit_name.c_str(),"Fit with power law");
   std::cout<<"canvas was created"<<std::endl;
     
   TH1D* histo_qcd = set_ratio(ht_min, ht_max, cond_qcd, delta_Phi_threshold , tree, "qcd", useMC);
   TH1D* histo_all = set_ratio(ht_min, ht_max, cond_all, delta_Phi_threshold , tree, "all", useMC);
 
+  std::cout<<"Ratios"<<std::endl;
+  for (int i = 0; i<=histo_qcd->GetXaxis()->GetNbins(); i++){
+      std::cout<<"Bin number: "<<i<<" ratio: "<<histo_qcd->GetBinContent(i)<<std::endl;
+    }
+    
   
   TF1* pow_bg = new TF1(pow_bg_name.c_str(), "[0]*TMath::Power(x,[1])", mt2_min, mt2_max);
   TH1D* band = new TH1D(band_name.c_str(), "Fitted gaussian with .68 conf.band", 500, mt2_min_global, mt2_max_global);
@@ -249,7 +267,8 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
   double var_left = param_b_left/param_b;
   double var_max = TMath::Max( fabs(var_right-1.0), fabs(var_left-1.0) );
     
-  std::cout << "Slope variation: " << var_right << " (right) / " << var_left << "(left)" << std::endl<< "   maximal variation: " << var_max << std::endl;
+  std::cout<<"Second parameter (b): "<<param_b_right<<" (right) "<<param_b_left<<" (left) "<<std::endl;
+  std::cout << "Slope variation: " << var_right << " (right) / " << var_left << " (left) " << std::endl<< "   maximal variation: " << var_max << std::endl;
     
   gPad->SetLogx();
   gPad->SetLogy();
@@ -260,7 +279,8 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
   band->GetXaxis()->SetNoExponent();
   band->GetXaxis()->SetMoreLogLabels();
   band->GetYaxis()->SetTitle("r_{#phi}");
-  band->SetTitle("CMS simulation, #sqrt{s} = 13 TeV");
+  if (useMC) band->SetTitle("CMS simulation, #sqrt{s} = 13 TeV");
+  else  band->SetTitle("CMS preliminary"); //CAPIRE CROSS SECTION VICINO A CME
   band->SetFillColor(29);
   band->SetFillStyle(3001);
   band->SetMinimum(0.01);
@@ -304,8 +324,17 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
   //add legend:
   TLegend* legend = new TLegend(0.68,0.72,0.85,0.86);
   legend->AddEntry(band_name.c_str(), "Fit", "FL");
-  legend->AddEntry("h_ratio_qcd","Simulation (multijet only)","PL");
-  legend->AddEntry("h_ratio_all","Simulation (all)","PL");
+  
+  if (useMC){
+        legend->AddEntry("h_ratio_qcd","Simulation (multijet only)","PL");
+        legend->AddEntry("h_ratio_all","Simulation (all)","PL");
+      }
+    
+  else{
+      legend->AddEntry("h_ratio_qcd","Data","PL");
+      legend->AddEntry("h_ratio_all","Data after subtraction","PL");
+      }
+    
   legend->Draw();
 
   //add text with descrption of considered region
@@ -346,10 +375,11 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
     
     
   //cominciare a differenziare mc/data e capire dettagli dei prescsales
-  //PLOTTARE ANCHE FIT CON RANGE DELLE INCERTEZZE
-    //capire bene perche' i pesi in MC
-    //aggiungere il band con incertezza sul fit, capire se è l'incertezza statistica o quella ottenuta variando il range, o entrambe
-    //capre come fa a plottare il range di confidenza. in particolare come una getConfidenceIntervals e bands
+   //aggiungere il band con incertezza sul fit, capire se è l'incertezza statistica o quella ottenuta variando il range, o entrambe
+  //capre come fa a plottare il range di confidenza. in particolare come una getConfidenceIntervals e bands
+  //guardare differenza tra errori miei e suoi
+   //cercare su lui applichi altri tagli particolari, solo nJets>1 ma non cambia nulla
+   //cominciare a sottrarre nonqcd
     
   delete chi2;
   delete pt;
@@ -358,7 +388,7 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
   delete line2;
   delete pow_bg;
   delete band;
-    delete fitted_bg;
+  delete fitted_bg;
   delete pow_bg_right;
   delete pow_bg_left;
   delete histo_qcd;
@@ -401,7 +431,33 @@ non-QCD procesess (5–16 %) are subtracted using MC.
 
 
 /*
- bands[*iR] = new TH1D(Form("band_%s",iR->getName().c_str()), "", 500, matchedEstimate->lDphi->GetXaxis()->GetXmin(), matchedEstimate->lDphi->GetXaxis()->GetXmax());
- (TVirtualFitter::GetFitter())->GetConfidenceIntervals(bands[*iR], 0.68);
+ void MT2EstimateQCD::randomizePoisson( float scale, int seed ){
+ 
+ MT2Estimate::randomizePoisson( scale, seed );
+ 
+ TRandom3 rand(seed);
+ 
+ for( int ibin=1; ibin<lDphi->GetXaxis()->GetNbins()+1; ++ibin ) {
+ 
+ int poisson_data = rand.Poisson(scale * lDphi->GetBinContent(ibin));
+ lDphi->SetBinContent(ibin, poisson_data);
+ //lDphi->SetBinError( ibin, 0. );
+ lDphi->SetBinError( ibin, TMath::Sqrt(poisson_data) ); // here i want an approximation of the Poisson error
+ 
+ }
+ 
  
  */
+
+//set bins depending on all/onlyqcd and ht region FINIRE
+/*int binnum_a = 15; int binnum_b = 16; int binnum_c = 17;
+ double bins_a = {50.0, 55.0,  60.0, 65.0, 70.0, 75.0, 80.0, 85.0, 90.0, 95.0, 100.0, 120.0, 200.0, 300.0, 500.0};
+ double bins_b = {50.0, 55.0,  60.0, 65.0, 70.0, 75.0, 80.0, 85.0, 90.0, 95.0, 100.0, 120.0, 200.0, 300.0, 500.0, 800.};
+ double bins_c = {50.0, 55.0,  60.0, 65.0, 70.0, 75.0, 80.0, 85.0, 90.0, 95.0, 100.0, 120.0, 200.0, 300.0, 500.0, 800., 1100};
+ int binnum = binnum_a;
+ double bins[binnum];
+ if ((ht_min<=500.0 && qcd_or_all == "all") || (ht_min>500.0 && qcd_or_all = "qcd")) {binnum = binnum_b;}
+ else if (qcd_or_all == "all" && ht_min>500.0) {binnum = binnum_c;}
+ PROVARE CON VECTOR*/
+
+
