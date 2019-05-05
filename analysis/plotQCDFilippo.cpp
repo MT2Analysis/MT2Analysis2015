@@ -146,7 +146,7 @@ TH1D* set_ratio(double ht_min, double ht_max, std::string  condition, double thr
         double sfFromSNT[5] = {1.88375, 1.38677, 1.27216, 1.16806, 1.02239};
         
         //lumiScale = useMC ? scaleMC : cfg.lumi(); SCALEMC???
-        
+        //divide mc statistics by prescales
         if     ( ht_min < 300. ) lumiScale *= sfFromSNT[0]/prescales[0];
         else if( ht_min< 500. ) lumiScale *= sfFromSNT[1]/prescales[1];
         else if( ht_min< 600. ) lumiScale *= sfFromSNT[2]/prescales[2];
@@ -157,6 +157,7 @@ TH1D* set_ratio(double ht_min, double ht_max, std::string  condition, double thr
         
         lumiScale = - lumiScale; //add minus sign for subtraction
         
+        //do the subtraction:
         h_small->Add(h_small_mc, lumiScale);
         h_big->Add(h_big_mc, lumiScale);
         
@@ -188,7 +189,7 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
   //max and min mt2 for whole plot (not only region for fitting)
   double mt2_min_global = 50.0; double mt2_max_global = 1000.0;
     
-  //names (to avoid segfault)
+    //new names for every energy region (to avoid segfault - still getting segfault, though:()
   std::ostringstream reg_nm;
   reg_nm << ht_min << "<HT<" << ht_max;
   std::string region_name = reg_nm.str();
@@ -233,6 +234,7 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
     }
     
   
+  //pow_bg for plotting line, band for plotting (68%) confidence interval
   TF1* pow_bg = new TF1(pow_bg_name.c_str(), "[0]*TMath::Power(x,[1])", mt2_min, mt2_max);
   TH1D* band = new TH1D(band_name.c_str(), "Fitted gaussian with .68 conf.band", 500, mt2_min_global, mt2_max_global);
 
@@ -244,6 +246,7 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
   double param_a = fitResult->GetParameter(0);
   double param_b = fitResult->GetParameter(1);
    
+  //compute fit one bin to the left and one bin to the right to look at the fitted paramers' variation
   double mt2_min_right = mt2_min + 5.0;
   double mt2_max_right = mt2_max + 25.0;
   double mt2_min_left = mt2_min - 5.0;
@@ -270,11 +273,12 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
   std::cout<<"Second parameter (b): "<<param_b_right<<" (right) "<<param_b_left<<" (left) "<<std::endl;
   std::cout << "Slope variation: " << var_right << " (right) / " << var_left << " (left) " << std::endl<< "   maximal variation: " << var_max << std::endl;
     
+  //get logarithmic graph:
   gPad->SetLogx();
   gPad->SetLogy();
     //gPad->SetTitle( "CMS simulation, #sqrt{s} = 13 TeV");
     
-  
+  //set graph title, labels etc.
   band->GetXaxis()->SetTitle("M_{T2} [GeV]");
   band->GetXaxis()->SetNoExponent();
   band->GetXaxis()->SetMoreLogLabels();
