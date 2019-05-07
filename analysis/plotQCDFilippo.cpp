@@ -71,31 +71,47 @@ int main( int argc, char* argv[] ) {
 
  // don't apply met>250 for validation region 100<MT2<200 from ht-only prescaled triggers
  std::string metcut = closureTest ? "" : "&& (met>250||ht>1000)";
- std::string cond_all = "(id>150&&(id>152||ht<450)&&(id>153||ht<575)&&(id>154||ht<1000)&&(id>155||ht<1500))" + metcut;
- std::string cond_qcd = "(id<160) && (id>=150)" + metcut; //CONTROLLARE se mettere metcut
-  
+ std::string cond_all_mc = "(id>150&&(id>152||ht<450)&&(id>153||ht<575)&&(id>154||ht<1000)&&(id>155||ht<1500))" + metcut;
+ std::string cond_qcd_mc = "(id<160) && (id>=150)" + metcut; //CONTROLLARE se mettere metcut
+
+//obviously for the data case I can't just define a condition to get qcd, so the two conditions are formally the same
+//(keep them both to keep the same function structure as in mc)
+ std::string cond_all_data = "nJets>1" ;  //SISTEMARE CUT!!!
+ std::string cond_qcd_data = "nJets>1" ; //CONTROLLARE se mettere metcut
+    
   //std::cout<<SumWeight(tree, "deltaPhiMin>0.3");
-  do_fit(250.0, 450.0, cond_all, cond_qcd, tree, useMC); std::cout<<""<<std::endl<<""<<std::endl<<""<<std::endl;
-  do_fit(450.0, 575.0, cond_all, cond_qcd, tree, useMC); std::cout<<""<<std::endl<<""<<std::endl<<""<<std::endl;
-  do_fit(575.0, 1000.0, cond_all, cond_qcd, tree, useMC); std::cout<<""<<std::endl<<""<<std::endl<<""<<std::endl;
-  do_fit(1000.0, 1500.0, cond_all, cond_qcd, tree, useMC); std::cout<<""<<std::endl<<""<<std::endl<<""<<std::endl;
-  do_fit(1500.0, 13000.0, cond_all, cond_qcd, tree, useMC); std::cout<<""<<std::endl<<""<<std::endl<<""<<std::endl;
-  
+    if (useMC) {
+        do_fit(250.0, 450.0, cond_all_mc, cond_qcd_mc, tree, useMC); std::cout<<""<<std::endl<<""<<std::endl<<""<<std::endl;
+        do_fit(450.0, 575.0, cond_all_mc, cond_qcd_mc, tree, useMC); std::cout<<""<<std::endl<<""<<std::endl<<""<<std::endl;
+        do_fit(575.0, 1000.0, cond_all_mc, cond_qcd_mc, tree, useMC); std::cout<<""<<std::endl<<""<<std::endl<<""<<std::endl;
+        do_fit(1000.0, 1500.0, cond_all_mc, cond_qcd_mc, tree, useMC); std::cout<<""<<std::endl<<""<<std::endl<<""<<std::endl;
+        do_fit(1500.0, 13000.0, cond_all_mc, cond_qcd_mc, tree, useMC); std::cout<<""<<std::endl<<""<<std::endl<<""<<std::endl;
+    }
+    
+    else if(!useMC) {
+        do_fit(250.0, 450.0, cond_all_data, cond_qcd_data, tree, useMC); std::cout<<""<<std::endl<<""<<std::endl<<""<<std::endl;
+        do_fit(450.0, 575.0, cond_all_data, cond_qcd_data, tree, useMC); std::cout<<""<<std::endl<<""<<std::endl<<""<<std::endl;
+        do_fit(575.0, 1000.0, cond_all_data, cond_qcd_data, tree, useMC); std::cout<<""<<std::endl<<""<<std::endl<<""<<std::endl;
+        do_fit(1000.0, 1500.0, cond_all_data, cond_qcd_data, tree, useMC); std::cout<<""<<std::endl<<""<<std::endl<<""<<std::endl;
+        do_fit(1500.0, 13000.0, cond_all_data, cond_qcd_data, tree, useMC); std::cout<<""<<std::endl<<""<<std::endl<<""<<std::endl;
+        
+    }
 
   data->Close();
   return 0;
 }
 
 
+
 TH1D* set_ratio(double ht_min, double ht_max, std::string  condition, double threshold, TTree* tree, std::string qcd_or_all, bool useMC){
 
     //cuts:
     std::ostringstream oss_big;
-    oss_big <<"("<< condition.c_str() << "&& ht<" << ht_max << " && ht>" << ht_min <<  " && deltaPhiMin>" << threshold<<" && nJets>1)";
+    oss_big <<"("<< condition.c_str() << "&& ht<" << ht_max << " && ht>" << ht_min <<  " && deltaPhiMin>" << threshold<<")";
     std::string cond_big = oss_big.str();
     
     std::ostringstream oss_small;
-    oss_small<<"("<< condition.c_str() << "&& ht<" << ht_max << " && ht>" << ht_min << " && deltaPhiMin<" <<threshold<<" && nJets>1)";
+    oss_small<<"("<< condition.c_str() << "&& ht<" << ht_max << " && ht>" << ht_min << " && deltaPhiMin<" <<threshold<<")";
     std::string cond_small = oss_small.str();
     
     //name of output histogram:
@@ -119,25 +135,42 @@ TH1D* set_ratio(double ht_min, double ht_max, std::string  condition, double thr
     TCut selection_small = cond_small.c_str();
     
     TCut weight = "weight";  //for data the variable weight is simply set to 1, so this works formally for both data and mc
-    TCut lumi = "lumi";
+    //TCut lumi = "lumi";
     TCut selection_big_and_weight = selection_big*weight;
     TCut selection_small_and_weight = selection_small*weight;
     
     tree->Draw("mt2>>h_big", selection_big_and_weight, "goff");
     tree->Draw("mt2>>h_small", selection_small_and_weight, "goff");
     
-    if (!useMC && qcd_or_all = "qcd") {
+    
+    //if data, subtract non qcd using montecarlo simulation
+    if (!useMC && qcd_or_all == "qcd") {
         
-        std::cout<<"Subtracting non qcd from mc..."
+        std::ostringstream oss_big_mc;
+        oss_big_mc <<"( id >= 300" << "&& ht<" << ht_max << " && ht>" << ht_min <<  " && deltaPhiMin>" << threshold<<" && nJets>1)";
+        std::string cond_big_mc = oss_big_mc.str();
+        
+        std::ostringstream oss_small_mc;
+        oss_big_mc <<"( id >= 300" << "&& ht<" << ht_max << " && ht>" << ht_min <<  " && deltaPhiMin<" << threshold<<" && nJets>1)";
+        std::string cond_small_mc = oss_small_mc.str();
+        
+        std::cout<<"Subtracting non qcd from mc...";
+        
         std::string mcpath = "EventYields_dataETH_SnTMC_35p9ifb/qcdControlRegion/mc.root";
         TFile* mc = new TFile(mcpath.c_str(), "READ");
         TTree* mc_tree = (TTree*)mc->Get("qcdCRtree/HT250toInf_j1toInf_b0toInf/tree_qcdCRtree_HT250toInf_j1toInf_b0toInf");
         
+        TCut selection_big_mc = cond_big_mc.c_str();
+        TCut selection_small_mc = cond_small_mc.c_str();
+        
+        TCut selection_big_and_weight_mc = selection_big_mc*weight;  //weight has been defined above
+        TCut selection_small_and_weight_mc = selection_small_mc*weight;
+        
         TH1D* h_small_mc = new TH1D ("h_small_mc", "h_small_mc", binnum, bins);
         TH1D* h_big_mc = new TH1D ("h_big_mc", "h_big_mc", binnum, bins);
-        mc_tree->Draw("mt2>>h_big_mc", selection_big_and_weight, "goff");
-        mc_tree->Draw("mt2>>h_small_mc", selection_small_and_weight, "goff");
-        
+        mc_tree->Draw("mt2>>h_big_mc", selection_big_and_weight_mc, "goff");
+        mc_tree->Draw("mt2>>h_small_mc", selection_small_and_weight_mc, "goff");
+        //problema: selezione diversa per gli id di montecarlo e data!! non usare selection..., o modificarla
         bool onlyUseUpToRunG = true;
         
         double lumiRatioGtoH = 27.261/35.876;
@@ -146,7 +179,7 @@ TH1D* set_ratio(double ht_min, double ht_max, std::string  condition, double thr
         double sfFromSNT[5] = {1.88375, 1.38677, 1.27216, 1.16806, 1.02239};
         
         //lumiScale = useMC ? scaleMC : cfg.lumi(); SCALEMC???
-        //divide mc statistics by prescales
+        //divide mc statistics by prescales depending on trigger used in the given ht region
         if     ( ht_min < 300. ) lumiScale *= sfFromSNT[0]/prescales[0];
         else if( ht_min< 500. ) lumiScale *= sfFromSNT[1]/prescales[1];
         else if( ht_min< 600. ) lumiScale *= sfFromSNT[2]/prescales[2];
@@ -167,6 +200,7 @@ TH1D* set_ratio(double ht_min, double ht_max, std::string  condition, double thr
         std::cout<<" ...done"<<std::endl;
     }
     
+    
     h_ratio->Divide(h_big, h_small);
     
     //std::cout<<"Ratio was set";
@@ -175,6 +209,7 @@ TH1D* set_ratio(double ht_min, double ht_max, std::string  condition, double thr
     return h_ratio;
 
 }
+
 
 
 void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string cond_qcd, TTree* tree, bool useMC){
@@ -194,32 +229,32 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
   reg_nm << ht_min << "<HT<" << ht_max;
   std::string region_name = reg_nm.str();
   
-    std::ostringstream pow_bg_nm;
-    pow_bg_nm << region_name.c_str()<<"_pow_bg";
-    std::string pow_bg_name = pow_bg_nm.str();
+  std::ostringstream pow_bg_nm;
+  pow_bg_nm << region_name.c_str()<<"_pow_bg";
+  std::string pow_bg_name = pow_bg_nm.str();
    
-    std::ostringstream pow_bg_nm_left;
-    pow_bg_nm_left << region_name.c_str()<<"_pow_bg_left";
-    std::string pow_bg_left_name = pow_bg_nm_left.str();
+  std::ostringstream pow_bg_nm_left;
+  pow_bg_nm_left << region_name.c_str()<<"_pow_bg_left";
+  std::string pow_bg_left_name = pow_bg_nm_left.str();
     
-    std::ostringstream pow_bg_nm_right;
-    pow_bg_nm_right << region_name.c_str()<<"_pow_bg_right";
-    std::string pow_bg_right_name = pow_bg_nm_right.str();
+  std::ostringstream pow_bg_nm_right;
+  pow_bg_nm_right << region_name.c_str()<<"_pow_bg_right";
+  std::string pow_bg_right_name = pow_bg_nm_right.str();
     
-    std::ostringstream cfit_nm;
-    cfit_nm << region_name.c_str()<<"_cfit";
-    std::string cfit_name = cfit_nm.str();
+  std::ostringstream cfit_nm;
+  cfit_nm << region_name.c_str()<<"_cfit";
+  std::string cfit_name = cfit_nm.str();
     
-    std::ostringstream pow_bg_fit_nm;
-    pow_bg_fit_nm << region_name.c_str()<<"_pow_bg_fit";
-    std::string pow_bg_fit_name = pow_bg_fit_nm.str();
+  std::ostringstream pow_bg_fit_nm;
+  pow_bg_fit_nm << region_name.c_str()<<"_pow_bg_fit";
+  std::string pow_bg_fit_name = pow_bg_fit_nm.str();
     
-    std::ostringstream band_nm;
-    band_nm << region_name.c_str()<<"_band";
-    std::string band_name = band_nm.str();
+  std::ostringstream band_nm;
+  band_nm << region_name.c_str()<<"_band";
+  std::string band_name = band_nm.str();
     
     
-    std::cout<<ht_min<<" GeV < H_T < "<<ht_max<<std::endl;
+  std::cout<<ht_min<<" GeV < H_T < "<<ht_max<<std::endl;
 
   //start the plotting; create canvas
   TCanvas* cfit = new TCanvas(cfit_name.c_str(),"Fit with power law");
@@ -228,9 +263,10 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
   TH1D* histo_qcd = set_ratio(ht_min, ht_max, cond_qcd, delta_Phi_threshold , tree, "qcd", useMC);
   TH1D* histo_all = set_ratio(ht_min, ht_max, cond_all, delta_Phi_threshold , tree, "all", useMC);
 
+  //print ratios
   std::cout<<"Ratios"<<std::endl;
   for (int i = 0; i<=histo_qcd->GetXaxis()->GetNbins(); i++){
-      std::cout<<"Bin number: "<<i<<" ratio: "<<histo_qcd->GetBinContent(i)<<std::endl;
+      std::cout<<"Bin number: "<<i<<" ratio: "<<histo_qcd->GetBinContent(i)<<"  weight: "<<histo_qcd->GetBinError(i)<<std::endl;
     }
     
   
@@ -276,7 +312,7 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
   //get logarithmic graph:
   gPad->SetLogx();
   gPad->SetLogy();
-    //gPad->SetTitle( "CMS simulation, #sqrt{s} = 13 TeV");
+  //gPad->SetTitle( "CMS simulation, #sqrt{s} = 13 TeV");
     
   //set graph title, labels etc.
   band->GetXaxis()->SetTitle("M_{T2} [GeV]");
@@ -384,6 +420,7 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
   //guardare differenza tra errori miei e suoi
    //cercare su lui applichi altri tagli particolari, solo nJets>1 ma non cambia nulla
    //cominciare a sottrarre nonqcd
+    //FARE SELEZIONI PER DATA. VEDI CODICE DI MASCIOVECCHIO COPIATO IN FONDO CON LE AREE DI PHASE SPACE SELEZIONATE. CAPIRE COSA SIA ID NEL CASO DEI DATI
     
   delete chi2;
   delete pt;
@@ -465,3 +502,15 @@ non-QCD procesess (5–16 %) are subtracted using MC.
  PROVARE CON VECTOR*/
 
 
+/*
+ 
+ if ( !useMC ) {//= DATA!!!
+ // with PFHT900 trigger only (HT only triggered)
+ data_4rHat       = MT2EstimateTree::makeAnalysisFromInclusiveTree( "data_4rHat"      , regionsSet_rHat  , qcdTree_data, "((id&1)==1 && ht>1000. &&  mt2>100. && mt2<200. && nJets>1 && deltaPhiMin<0.3"+runRange+")" ); // invert deltaPhi; ht>1000 unprescaled triggers
+ data_4fJets      = MT2EstimateTree::makeAnalysisFromInclusiveTree( "data_4fJets"     , regionsSet_fJets , qcdTree_data, "((id&1)==1 &&              mt2>100. && mt2<200. && nJets>1 && deltaPhiMin<0.3"+runRange+")" ); // invert deltaPhi; HT-only triggers, ps'ed for HT<1000, empty for HT<450
+ // without prescaled guys //update to new id stuff ... // it's wrong at the moment
+ data_noPS_4fJets = MT2EstimateTree::makeAnalysisFromInclusiveTree( "data_noPS_4fJets", regionsSet_fJets , qcdTree_data, "(((id==1&&ht>100)||(id==2&&ht>450&&ht<1000)||(id==3&&ht<450))&& mt2>100. && mt2<200. && nJets>1 && deltaPhiMin<0.3"+runRange+")" ); // invert deltaPhi; unprescaled triggers, HT-only for ht>100, HTMHT for450< ht<1000, MET for ht<450 (below ht<1000 we live in turnon, better not to subtract an unknown amount of non-QCD [smaller than 18% for VLHT])
+ //NON-QCD MC to be subtracted
+ rest_4rHat       = MT2EstimateTree::makeAnalysisFromInclusiveTree( "rest_4rHat"      , regionsSet_rHat  , qcdTree_mc  , "(id>=300 && ht>1000. &&  mt2>100. && mt2<200. && nJets>1 && deltaPhiMin<0.3)" ); // invert deltaPhi
+ rest_4fJets      = MT2EstimateTree::makeAnalysisFromInclusiveTree( "rest_4fJets"     , regionsSet_fJets , qcdTree_mc  , "(id>=300 &&              mt2>100. && mt2<200. && nJets>1 && deltaPhiMin<0.3)" ); // invert deltaPhi
+ }*/
