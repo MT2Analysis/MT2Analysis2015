@@ -233,7 +233,7 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
   //tree is the tree containing the data
   double delta_Phi_threshold = 0.3;
   //limits of fitting region:
-  double mt2_min = 60.0; double mt2_max = 100.0;
+  double mt2_min = 60.0; double mt2_max = 100.0;  //fit boundaries
   if(ht_min>=999.0) {mt2_min = 70.0;}  //stay on the safe side for high ht regions
   
   //max and min mt2 for whole plot (not only region for fitting)
@@ -319,7 +319,7 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
   
   double param_b_left = fitResult_left->GetParameter(1);
   double var_left = param_b_left/param_b;
-  
+  //compute now maximal variation:
   double var_max = TMath::Max( fabs(var_right-1.0), fabs(var_left-1.0) );
     
   std::cout<<"Second parameter (b): "<<param_b_right<<" (right) "<<param_b_left<<" (left) "<<std::endl;
