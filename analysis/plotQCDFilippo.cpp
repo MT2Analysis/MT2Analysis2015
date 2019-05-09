@@ -142,10 +142,17 @@ TH1D* set_ratio(double ht_min, double ht_max, std::string  condition, double thr
     tree->Draw("mt2>>h_big", selection_big_and_weight, "goff");
     tree->Draw("mt2>>h_small", selection_small_and_weight, "goff");
     
+    if (!useMC){
+        std::cout<<"Data: number of events before subtraction"<<std::endl;
+        for (int i = 0; i<=h_big->GetXaxis()->GetNbins(); i++){
+            std::cout<<"Bin number: "<<i<<" big dPhi: "<<h_big->GetBinContent(i)<<"  small DPhi: "<<h_small->GetBinContent(i)<<std::endl;
+        }
+    }
     
     //if data, subtract non qcd using montecarlo simulation
     if (!useMC && qcd_or_all == "qcd") {
         
+        //per tagli usati vedi definizione di mc_rest nel codice di Masciovecchio
         std::ostringstream oss_big_mc;
         oss_big_mc <<"( id >= 300" << "&& ht<" << ht_max << " && ht>" << ht_min <<  " && deltaPhiMin>" << threshold<<" && nJets>1)";
         std::string cond_big_mc = oss_big_mc.str();
@@ -194,11 +201,19 @@ TH1D* set_ratio(double ht_min, double ht_max, std::string  condition, double thr
         h_small->Add(h_small_mc, lumiScale);
         h_big->Add(h_big_mc, lumiScale);
         
+        std::cout<<" ...done"<<std::endl;
+        
+        std::cout<<"Data: number of qcd events estimated after subtraction"<<std::endl;
+        for (int i = 0; i<=h_big->GetXaxis()->GetNbins(); i++){
+            std::cout<<"Bin number: "<<i<<" big dPhi: "<<h_big->GetBinContent(i)<<"  small DPhi: "<<h_small->GetBinContent(i)<<std::endl;
+        }
+        
         delete h_small_mc;
         delete h_big_mc;
         
-        std::cout<<" ...done"<<std::endl;
+       
     }
+    
     
     
     h_ratio->Divide(h_big, h_small);
@@ -289,21 +304,22 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
   double mt2_max_left  = mt2_max;
     
   TF1* pow_bg_right = new TF1(pow_bg_right_name.c_str(), "[0]*TMath::Power(x,[1])", mt2_min_right, mt2_max_right);
-  TF1* pow_bg_left = new TF1(pow_bg_left_name.c_str(), "[0]*TMath::Power(x,[1])", mt2_min_left, mt2_max_left);
   
   std::cout<<"Right variation:"<<std::endl;
   histo_qcd->Fit(pow_bg_right_name.c_str(), "R 0");
   TF1* fitResult_right = histo_qcd->GetFunction(pow_bg_right_name.c_str());
   
+  TF1* pow_bg_left = new TF1(pow_bg_left_name.c_str(), "[0]*TMath::Power(x,[1])", mt2_min_left, mt2_max_left);
+  double param_b_right = fitResult_right->GetParameter(1);
+  double var_right = param_b_right/param_b;
+    
   std::cout<<"Left variation:"<<std::endl;
   histo_qcd->Fit(pow_bg_left_name.c_str(), "R 0");
   TF1* fitResult_left = histo_qcd->GetFunction(pow_bg_left_name.c_str());
   
-  double param_b_right = fitResult_right->GetParameter(1);
   double param_b_left = fitResult_left->GetParameter(1);
-    
-  double var_right = param_b_right/param_b;
   double var_left = param_b_left/param_b;
+  
   double var_max = TMath::Max( fabs(var_right-1.0), fabs(var_left-1.0) );
     
   std::cout<<"Second parameter (b): "<<param_b_right<<" (right) "<<param_b_left<<" (left) "<<std::endl;
@@ -414,12 +430,7 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
   cfit->SaveAs(output_name.c_str());
     
     
-  //cominciare a differenziare mc/data e capire dettagli dei prescsales
-   //aggiungere il band con incertezza sul fit, capire se è l'incertezza statistica o quella ottenuta variando il range, o entrambe
-  //capre come fa a plottare il range di confidenza. in particolare come una getConfidenceIntervals e bands
-  //guardare differenza tra errori miei e suoi
    //cercare su lui applichi altri tagli particolari, solo nJets>1 ma non cambia nulla
-   //cominciare a sottrarre nonqcd
     //FARE SELEZIONI PER DATA. VEDI CODICE DI MASCIOVECCHIO COPIATO IN FONDO CON LE AREE DI PHASE SPACE SELEZIONATE. CAPIRE COSA SIA ID NEL CASO DEI DATI
     
   delete chi2;
@@ -437,26 +448,6 @@ void do_fit(double ht_min, double ht_max, std::string  cond_all, std::string con
   delete cfit;
 }
 
-
-
-/*double lumiRatioGtoH = 27.261/35.876;
-
-double prescales[3] = {7900., 440.6, 110.2}; // up to run G 27.7 fb-1
-
-double lumiScale = 1.;
-double sfFromSNT[5] = {1.88375, 1.38677, 1.27216, 1.16806, 1.02239};
-
-
-if( !useMC || scaleMC!=0. ) {
-    lumiScale = useMC ? scaleMC : cfg.lumi();
-    if     ( iR->htMin() < 300. ) lumiScale *= sfFromSNT[0]/prescales[0];
-    else if( iR->htMin() < 500. ) lumiScale *= sfFromSNT[1]/prescales[1];
-    else if( iR->htMin() < 600. ) lumiScale *= sfFromSNT[2]/prescales[2];
-    else if( iR->htMin() < 1100.) lumiScale *= sfFromSNT[3];
-    else                          lumiScale *= sfFromSNT[4];
-    if (onlyUseUpToRunG)
-            lumiScale *= lumiRatioGtoH;
-    }*/
 
 
 
