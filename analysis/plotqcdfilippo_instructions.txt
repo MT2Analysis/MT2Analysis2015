@@ -1,0 +1,10 @@
+In order to run the program:
+when running with MC simulation:
+
+./plotQCDFilippo mc.root
+
+When running with data:
+
+./plotQCDFilippo data.root data
+
+the last command ("data") tells the program to perform non-QCD subtraction using MC simulation
